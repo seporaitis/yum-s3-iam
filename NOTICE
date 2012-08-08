@@ -1,0 +1,10 @@
+This code is based on 'yum-s3-plugin' by Robert Mela, which can be
+found here: https://github.com/rmela/yum-s3-plugin
+
+Big thanks for him for releasing it as open-source.
+
+This code can be used under the terms of the Apache License 2.0,
+provided in the LICENSE file in this directory and available at time
+of this writing at http://www.apache.org/licenses/LICENSE-2.0.txt
+
+Licenses for Python and Yum may also apply.
