@@ -53,7 +53,7 @@ CONDUIT = None
 
 
 def config_hook(conduit):
-    config.RepoConf.iamrole = config.BoolOption(False)
+    config.RepoConf.iamrole = config.Option('')
 
 def init_hook(conduit):
     """
@@ -63,8 +63,9 @@ def init_hook(conduit):
     repos = conduit.getRepos()
     for key, repo in repos.repos.iteritems():
         if isinstance(repo, YumRepository) and repo.iamrole:
+            print "s3iam: found S3 private repository"
             new_repo = S3Repository(key, repo.iamrole)
-            new_repo.iamrole = iamrole
+            new_repo.iamrole = repo.iamrole
             new_repo.baseurl = repo.baseurl
             new_repo.mirrorlist = repo.mirrorlist
             new_repo.basecachedir = repo.basecachedir
@@ -81,7 +82,7 @@ class S3Repository(YumRepository):
     """
 
     def __init__(self, repoid, iamrole):
-        super(S3Repository, self).__init__(self, repoid)
+        YumRepository.__init__(self, repoid)
         self.iamrole = iamrole
         self.enable()
         self.grabber = None
@@ -96,7 +97,7 @@ class S3Repository(YumRepository):
     def _getgrab(self):
         if not self.grabber:
             self.grabber = S3Grabber(baseurl=self.baseurl, iamrole=self.iamrole)
-            return self.grabber
+        return self.grabber
 
     grabfunc = property(lambda self: self.getgrabfunc())
     grab = property(lambda self: self._getgrab())
@@ -112,18 +113,19 @@ class S3Grabber(object):
         self.baseurl = baseurl
         self.iamrole = iamrole
 
-        key, secret = S3Grabber.get_credentials(self.iamrole)
+        key, secret, token = S3Grabber.get_credentials(self.iamrole)
         self.access_key = key
         self.secret_key = secret
+        self.token = token
 
     def _request(self, url):
         req = urllib2.Request("%s%s" % (self.baseurl, url))
-        S3Grabber.sign(req)
+        req.add_header('x-amz-security-token', self.token)
+        S3Grabber.sign(req, self.access_key, self.secret_key, self.token)
         return req
 
     def urlgrab(self, url, filename=None, **kwargs):
         """urlgrab(url) copy the file to the local filesystem."""
-        print "S3Grabber: grabbing url=%s filename=%s" % (url, filename)
         req = self._request(url)
         if not filename:
             filename = req.get_selector()
@@ -135,6 +137,7 @@ class S3Grabber(object):
         while buff:
             out.write(buff)
             buff = resp.read(8192)
+
         return filename
 
     def urlopen(self, url, **kwargs):
@@ -146,28 +149,32 @@ class S3Grabber(object):
         return urllib2.urlopen(self._request(url)).read()
 
     @classmethod
-    def sign(cls, request, date=None):
+    def sign(cls, request, access_key, secret_key, token, date=None):
         """Attach a valid S3 signature to request."""
         date = time.strftime("%a, %d %b %Y %H:%M:%S +0000", date or time.gmtime())
         request.add_header('Date', date)
         host = request.get_host()
-        bucket = host.split('.')[0]
-        resource = "/%s%s" % (bucket, request.get_selector())
-        sigstring = """%(method)s\n\n\n%(date)s\n%(canon_amzn_resource)s""" % ({
+        pos = host.find(".s3")
+        bucket = host[:pos]
+        resource = "/%s%s" % (bucket, request.get_selector(), )
+        amz_headers = 'x-amz-security-token:%s\n' % (token, )
+        sigstring = """%(method)s\n\n\n%(date)s\n%(canon_amzn_headers)s%(canon_amzn_resource)s""" % ({
             'method': request.get_method(),
             'date': request.headers.get('Date'),
+            'canon_amzn_headers': amz_headers,
             'canon_amzn_resource': resource})
-        digest = hmac.new(self.secret_key, sigstring, hashlib.sha1).digest()
+        digest = hmac.new(str(secret_key), str(sigstring), hashlib.sha1).digest()
         signature = base64.b64encode(digest)
-        request.add_header('Authorization', "AWS %s:%s" % (self.access_key, signature))
+        request.add_header('Authorization', "AWS %s:%s" % (access_key, signature))
 
     @classmethod
     def get_credentials(cls, role):
         """Read IAM role credentials from metadata store."""
-        print "S3Grabber: retrieving credentials for IAM role '%s'" % (role, )
+        print "s3iam: retrieving credentials for IAM role '%s'" % (role, )
         req = urllib2.Request("http://169.254.169.254/latest/meta-data/iam/security-credentials/%s" % (role, ))
         res = urllib2.urlopen(req)
-        json = json.loads(res.read())
-        access_key = json['AccessKeyId']
-        secret_key = json['SecretAccessKey']
-        return access_key, secret_key
+        data = json.loads(res.read())
+        access_key = data['AccessKeyId']
+        secret_key = data['SecretAccessKey']
+        token = data['Token']
+        return access_key, secret_key, token

@@ -23,6 +23,8 @@ import sys
 import unittest
 import os
 import os.path
+import urllib2
+import time
 sys.path.append('.')
 import s3iam
 
@@ -42,7 +44,7 @@ class S3GrabberTest(unittest.TestCase):
 
     def setUp(self):
         repository_url = "%s%s/" % (BASE_URL, BUCKET_NAME)
-        self.grabber = s3iam.S3Grabber(baseurl=repository_url, role=IAM_ROLE)
+        self.grabber = s3iam.S3Grabber(baseurl=repository_url, iamrole=IAM_ROLE)
 
     def test_invalid_key(self):
         req = urllib2.Request("%s%s/%s" % (BASE_URL, BUCKET_NAME, FILE_PATH))
@@ -50,7 +52,17 @@ class S3GrabberTest(unittest.TestCase):
         self.grabber.sign(req)
         self.assertRaises(urllib2.HTTPError, urllib2.urlopen, req)
 
+    def test_example_sign(self):
+        """Test with example data"""
+        req = urllib2.Request("https://johnsmith.s3.amazonaws.com/photos/puppy.jpg")
+        s3iam.S3Grabber.sign(req, "AKIAIOSFODNN7EXAMPLE", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", date=time.strptime("2007-03-27 19:36:42", "%Y-%m-%d %H:%M:%S")
+        self.assertEqual(req.headers.get('Authorization'), "AWS AKIAIOSFODNN7EXAMPLE:bWq2s1WEIj+Ydj0vQ697zp+IXMU=")
+
     def test_urlgrab(self):
         url = urlparse(TEST_FILE)
         result = self.grabber.urlgrab(TEST_FILE)
         self.assertTrue(os.path.exists)
+
+
+if __name__ == '__main__':
+    unittest.main()
