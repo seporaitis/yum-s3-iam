@@ -31,8 +31,8 @@ s3iam.py file.
 
 The tests will fail, except maybe for the aws signature generation
 test. And although this code successfully runs on a live machine, _I
-would like some advice of how I could write tests Yum pluging/AWS API
-consumer_.
+would like some advice of how I could write tests for Yum plugin/AWS
+API consumer like this one_.
 
 ## License
 
