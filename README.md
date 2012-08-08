@@ -1,9 +1,21 @@
 # yum-s3-iam
 
 This is [Yum](http://yum.baseurl.org/) plugin that allows usage of
-private S3 buckets as package repositories. It also uses AWS Identity
-and Access Management (IAM) roles for authorization, so you do not
+private S3 buckets as package repositories. It also uses AWS [Identity
+and Access Management](http://aws.amazon.com/iam/) (IAM) roles for authorization, so you do not
 need to enter your access/secret key pair anywhere in configuration.
+
+## What is IAM Role?
+
+Roles are permissions that can be assigned to an entity, in this case
+an AWS EC2 service. About how it works I suggest you dig through
+[docs](http://aws.amazon.com/documentation/iam/).
+
+What is important for us: when you assign role to an EC2 instance,
+a constantly rotated (by AWS) access credentials become available for
+access within the instance. This means you don't need to store them
+anywhere, to change and/or rotate them, and you have a fine-grain
+control on what actions can be made using those credentials.
 
 ## How-to set it up?
 
