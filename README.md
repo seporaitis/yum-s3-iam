@@ -27,9 +27,9 @@ gives s3:GetObject permissions to that role.
 - Launch instances with this role assigned (this is very important,
   read below).
 - Inside the instance:
--- Copy `s3iam.py` to `/usr/lib/yum-plugins/`
--- Copy `s3iam.conf` to `/etc/yum/pluginconf.d/`
--- Configure your `iamrole` for your repository as in example
+  - Copy `s3iam.py` to `/usr/lib/yum-plugins/`
+  - Copy `s3iam.conf` to `/etc/yum/pluginconf.d/`
+  - Configure your `iamrole` for your repository as in example
     `s3iam.repo` file.
 
 If you forget to assign a role or run this code on non EC2 instance,

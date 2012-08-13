@@ -81,22 +81,27 @@ class S3Repository(YumRepository):
     @property
     def grab(self):
         if not self.grabber:
-            self.grabber = S3Grabber(self.baseurl, self.iamrole)
+            self.grabber = S3Grabber(self)
         return self.grabber
 
 
 class S3Grabber(object):
 
-    def __init__(self, baseurl, iamrole):
+    def __init__(self, repo):
         """Initialize file grabber.
         Note: currently supports only single baseurl. So in case of a list
               only the first item will be used.
         """
-        if isinstance(baseurl, (basestring)):
+        if isinstance(repo.baseurl, basestring):
             self.baseurl = baseurl
         else:
-            self.baseurl = baseurl[0]
-        self.iamrole = iamrole
+            if len(repo.baseurl) != 1:
+                raise yum.plugins.PluginYumExit("s3iam: repository '{0}' "
+                                                "must have only one "
+                                                "'baseurl' value" % repo.id)
+            else:
+                self.baseurl = repo.baseurl[0]
+        self.iamrole = repo.iamrole
 
         # Read IAM credentials from AWS metadata store.
         request = urllib2.Request(
@@ -130,13 +135,16 @@ class S3Grabber(object):
             filename = req.get_selector()
             if filename.startswith('/'):
                 filename = filename[1:]
-        out = open(filename, 'w+')
-        response = urllib2.urlopen(request)
-        buff = response.read(8192)
-        while buff:
-            out.write(buff)
+        try:
+            out = open(filename, 'w+')
+            response = urllib2.urlopen(request)
             buff = response.read(8192)
-        response.close()
+            while buff:
+                out.write(buff)
+                buff = response.read(8192)
+        finally:
+            response.close()
+            out.close()
 
         return filename
 
@@ -161,17 +169,24 @@ class S3Grabber(object):
         # TODO: bucket name finding is ugly, I should find a way to support
         # both naming conventions: http://bucket.s3.amazonaws.com/ and
         # http://s3.amazonaws.com/bucket/
-        pos = host.find(".s3")
-        bucket = host[:pos]
+        try:
+            pos = host.find(".s3")
+            assert pos != -1
+            bucket = host[:pos]
+        except AssertionError:
+            raise yum.plugins.PluginYumExit(
+                "s3iam: baseurl hostname should be in format: "
+                "'<bucket>.s3<aws-region>.amazonaws.com'; "
+                "found '%s'" % host)
 
         resource = "/%s%s" % (bucket, request.get_selector(), )
-        amz_headers = 'x-amz-security-token:%s\n' % (self.token, )
-        sigstring = ("{method}\n\n\n{date}\n"
-                     "{canon_amzn_headers}{canon_amzn_resource}").format(
-                         method=request.get_method(),
-                         date=request.headers.get('Date'),
-                         canon_amzn_headers=amz_headers,
-                         canon_amzn_resource=resource)
+        amz_headers = 'x-amz-security-token:%s\n' % self.token
+        sigstring = ("%(method)s\n\n\n%(date)s\n"
+                     "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
+                         'method': request.get_method(),
+                         'date': request.headers.get('Date'),
+                         'canon_amzn_headers': amz_headers,
+                         'canon_amzn_resource': resource})
         digest = hmac.new(
             str(self.secret_key),
             str(sigstring),
