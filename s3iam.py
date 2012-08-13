@@ -82,6 +82,7 @@ class S3Repository(YumRepository):
     def grab(self):
         if not self.grabber:
             self.grabber = S3Grabber(self)
+            self.grabber.get_credentials()
         return self.grabber
 
 
@@ -89,7 +90,7 @@ class S3Grabber(object):
 
     def __init__(self, repo):
         """Initialize file grabber.
-        Note: currently supports only single baseurl. So in case of a list
+        Note: currently supports only single repo.baseurl. So in case of a list
               only the first item will be used.
         """
         if isinstance(repo.baseurl, basestring):
@@ -103,16 +104,22 @@ class S3Grabber(object):
                 self.baseurl = repo.baseurl[0]
         self.iamrole = repo.iamrole
 
-        # Read IAM credentials from AWS metadata store.
-        request = urllib2.Request(
-            urlparse.urljoin(
+    def get_credentials(self):
+        """Read IAM credentials from AWS metadata store.
+        Note: This method should be explicitly called after constructing new
+              object, as in 'explicit is better than implicit'.
+        """
+        try:
+            request = urllib2.Request(
                 urlparse.urljoin(
-                    "http://169.254.169.254/",
-                    "latest/meta-data/iam/security-credentials/",
-                ), self.iamrole))
-        response = urllib2.urlopen(request)
-        data = json.loads(response.read())
-        response.close()
+                    urlparse.urljoin(
+                        "http://169.254.169.254/",
+                        "latest/meta-data/iam/security-credentials/",
+                    ), self.iamrole))
+            response = urllib2.urlopen(request)
+            data = json.loads(response.read())
+        finally:
+            response.close()
 
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
