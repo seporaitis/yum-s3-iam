@@ -115,6 +115,8 @@ class S3Grabber(object):
                     "http://169.254.169.254/",
                     "latest/meta-data/iam/security-credentials/",
                 ), self.iamrole))
+
+        response = None
         try:
             response = urllib2.urlopen(request)
             data = json.loads(response.read())
@@ -144,6 +146,7 @@ class S3Grabber(object):
             if filename.startswith('/'):
                 filename = filename[1:]
 
+        response = None
         try:
             out = open(filename, 'w+')
             response = urllib2.urlopen(request)
