@@ -109,17 +109,18 @@ class S3Grabber(object):
         Note: This method should be explicitly called after constructing new
               object, as in 'explicit is better than implicit'.
         """
-        try:
-            request = urllib2.Request(
+        request = urllib2.Request(
+            urlparse.urljoin(
                 urlparse.urljoin(
-                    urlparse.urljoin(
-                        "http://169.254.169.254/",
-                        "latest/meta-data/iam/security-credentials/",
-                    ), self.iamrole))
+                    "http://169.254.169.254/",
+                    "latest/meta-data/iam/security-credentials/",
+                ), self.iamrole))
+        try:
             response = urllib2.urlopen(request)
             data = json.loads(response.read())
         finally:
-            response.close()
+            if response:
+                response.close()
 
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
@@ -142,6 +143,7 @@ class S3Grabber(object):
             filename = req.get_selector()
             if filename.startswith('/'):
                 filename = filename[1:]
+
         try:
             out = open(filename, 'w+')
             response = urllib2.urlopen(request)
@@ -150,7 +152,8 @@ class S3Grabber(object):
                 out.write(buff)
                 buff = response.read(8192)
         finally:
-            response.close()
+            if response:
+                response.close()
             out.close()
 
         return filename
