@@ -138,6 +138,7 @@ class S3Grabber(object):
         finally:
             if response:
                 response.close()
+
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
         self.token = data['Token']
