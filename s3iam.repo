@@ -20,5 +20,5 @@ name=S3 yum plugin test repository config
 baseurl=http://your-bucket-name.s3.amazonaws.com/
 failovermethod=priority
 enabled=1
+s3_enabled=1
 gpgcheck=0
-iamrole=s3access

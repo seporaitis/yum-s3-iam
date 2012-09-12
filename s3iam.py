@@ -30,7 +30,6 @@ import hashlib
 import hmac
 import base64
 import json
-import email.utils
 
 import yum
 import yum.config
@@ -49,7 +48,7 @@ CONDUIT = None
 
 
 def config_hook(conduit):
-    yum.config.RepoConf.iamrole = yum.config.Option('')
+    yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
 
 
 def init_hook(conduit):
@@ -57,9 +56,9 @@ def init_hook(conduit):
 
     repos = conduit.getRepos()
     for key, repo in repos.repos.iteritems():
-        if isinstance(repo, YumRepository) and repo.iamrole:
+        if isinstance(repo, YumRepository) and repo.s3_enabled and repo.enabled:
             print "s3iam: found S3 private repository"
-            new_repo = S3Repository(repo.id, repo.iamrole, repo.baseurl)
+            new_repo = S3Repository(repo.id, repo.baseurl)
             repos.delete(key)
             repos.add(new_repo)
 
@@ -67,9 +66,9 @@ def init_hook(conduit):
 class S3Repository(YumRepository):
     """Repository object for Amazon S3, using IAM Roles."""
 
-    def __init__(self, repoid, iamrole, baseurl):
+    def __init__(self, repoid, baseurl):
         super(S3Repository, self).__init__(repoid)
-        self.iamrole = iamrole
+        self.iamrole = None
         self.baseurl = baseurl
         self.grabber = None
         self.enable()
@@ -82,6 +81,7 @@ class S3Repository(YumRepository):
     def grab(self):
         if not self.grabber:
             self.grabber = S3Grabber(self)
+            self.grabber.get_role()
             self.grabber.get_credentials()
         return self.grabber
 
@@ -102,7 +102,22 @@ class S3Grabber(object):
                                                 "'baseurl' value" % repo.id)
             else:
                 self.baseurl = repo.baseurl[0]
-        self.iamrole = repo.iamrole
+
+    def get_role(self):
+        """Read IAM role from AWS metadata store."""
+        request = urllib2.Request(
+            urlparse.urljoin(
+                "http://169.254.169.254",
+                "/latest/meta-data/iam/security-credentials/"
+            ))
+
+        response = None
+        try:
+            response = urllib2.urlopen(request)
+            self.iamrole = (response.read())
+        finally:
+            if response:
+                response.close()
 
     def get_credentials(self):
         """Read IAM credentials from AWS metadata store.
@@ -169,13 +184,11 @@ class S3Grabber(object):
         """urlread(url) return the contents of the file as a string."""
         return urllib2.urlopen(self._request(url)).read()
 
-    def sign(self, request, timeval=None):
+    def sign(self, request):
         """Attach a valid S3 signature to request.
         request - instance of Request
-        timeval - floating point time value as accepted by `time.gmtime`,
-                  otherwise the current time is used.
         """
-        date = email.utils.formatdate(timeval or time.mktime(time.gmtime()))
+        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         request.add_header('Date', date)
         host = request.get_host()
 
