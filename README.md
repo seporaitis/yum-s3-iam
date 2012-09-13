@@ -20,8 +20,9 @@ control on what actions can be made using those credentials.
 
 ## How-to set it up?
 
-See a great blog post by Jeremy Carroll which explains how to use this
-plugin in depth: [S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
+Great blog post by Jeremy Carroll which in depth explains how to
+use this plugin:
+[S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
 
 ## What's with the tests?
 
