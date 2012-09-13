@@ -20,21 +20,9 @@ control on what actions can be made using those credentials.
 
 ## How-to set it up?
 
-This is a rough description:
-
-- Create IAM Role (e.g. 'applicationserver') and set a policy that
-gives s3:GetObject permissions to that role.
-- Launch instances with this role assigned (this is very important,
-  read below).
-- Inside the instance:
-  - Copy `s3iam.py` to `/usr/lib/yum-plugins/`
-  - Copy `s3iam.conf` to `/etc/yum/pluginconf.d/`
-  - Configure your `iamrole` for your repository as in example
-    `s3iam.repo` file.
-
-If you forget to assign a role or run this code on non EC2 instance,
-nothing disastrous will happen, but you will see errors saying that
-the plugin was unable to connect to S3 repository.
+Read a great blog post by Jeremy Carroll which in depth explains how to
+use this plugin:
+[S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
 
 ## What's with the tests?
 
