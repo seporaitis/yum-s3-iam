@@ -57,8 +57,8 @@ def init_hook(conduit):
     repos = conduit.getRepos()
     for key, repo in repos.repos.iteritems():
         if isinstance(repo, YumRepository) and repo.s3_enabled and repo.enabled:
-            print "s3iam: found S3 private repository"
             new_repo = S3Repository(repo.id, repo.baseurl)
+            new_repo.name = repo.name
             repos.delete(key)
             repos.add(new_repo)
 
