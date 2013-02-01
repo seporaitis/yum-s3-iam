@@ -117,6 +117,9 @@ class S3Grabber(object):
                                                 "'baseurl' value" % repo.id)
             else:
                 self.baseurl = repo.baseurl[0]
+        # Ensure urljoin doesn't ignore base path:
+        if not self.baseurl.endswith('/'):
+            self.baseurl += '/'
 
     def get_role(self):
         """Read IAM role from AWS metadata store."""
