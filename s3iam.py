@@ -40,7 +40,7 @@ from yum.yumRepo import YumRepository
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
-           'config_hook', 'init_hook']
+           'config_hook', 'postreposetup_hook']
 
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
@@ -50,15 +50,15 @@ CONDUIT = None
 def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
 
-def init_hook(conduit):
+def postreposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
 
     repos = conduit.getRepos()
     conf = conduit.getConf()
     cachedir = conf.cachedir
 
-    for key, repo in repos.repos.iteritems():
-        if isinstance(repo, YumRepository) and repo.s3_enabled and repo.enabled:
+    for repo in repos.listEnabled():
+        if isinstance(repo, YumRepository) and repo.s3_enabled:
             new_repo = S3Repository(repo.id, repo.baseurl)
             new_repo.name = repo.name
             # new_repo.baseurl = repo.baseurl
@@ -74,7 +74,6 @@ def init_hook(conduit):
                 new_repo.base_persistdir = repo.base_persistdir
 
             repos.delete(repo.id)
-            #repos.delete(key)
             repos.add(new_repo)
 
 
