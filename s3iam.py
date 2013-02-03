@@ -21,14 +21,11 @@ __license__ = "Apache 2.0"
 __version__ = "1.0.1"
 
 
-import os
-import sys
 import urllib2
 import urlparse
 import time
 import hashlib
 import hmac
-import base64
 import json
 
 import yum
@@ -40,7 +37,7 @@ from yum.yumRepo import YumRepository
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
-           'config_hook', 'init_hook']
+           'config_hook', 'postreposetup_hook']
 
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
@@ -50,15 +47,14 @@ CONDUIT = None
 def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
 
-def init_hook(conduit):
+
+def postreposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
 
     repos = conduit.getRepos()
-    conf = conduit.getConf()
-    cachedir = conf.cachedir
 
-    for key, repo in repos.repos.iteritems():
-        if isinstance(repo, YumRepository) and repo.s3_enabled and repo.enabled:
+    for repo in repos.listEnabled():
+        if isinstance(repo, YumRepository) and repo.s3_enabled:
             new_repo = S3Repository(repo.id, repo.baseurl)
             new_repo.name = repo.name
             # new_repo.baseurl = repo.baseurl
@@ -74,7 +70,6 @@ def init_hook(conduit):
                 new_repo.base_persistdir = repo.base_persistdir
 
             repos.delete(repo.id)
-            #repos.delete(key)
             repos.add(new_repo)
 
 
@@ -90,7 +85,7 @@ class S3Repository(YumRepository):
 
     @property
     def grabfunc(self):
-        raise NotImplementedException("grabfunc called, when it shouldn't be!")
+        raise NotImplementedError("grabfunc called, when it shouldn't be!")
 
     @property
     def grab(self):
@@ -108,8 +103,8 @@ class S3Grabber(object):
         Note: currently supports only single repo.baseurl. So in case of a list
               only the first item will be used.
         """
-        if isinstance(repo.baseurl, basestring):
-            self.baseurl = baseurl
+        if isinstance(repo, basestring):
+            self.baseurl = repo
         else:
             if len(repo.baseurl) != 1:
                 raise yum.plugins.PluginYumExit("s3iam: repository '{0}' "
@@ -117,6 +112,9 @@ class S3Grabber(object):
                                                 "'baseurl' value" % repo.id)
             else:
                 self.baseurl = repo.baseurl[0]
+        # Ensure urljoin doesn't ignore base path:
+        if not self.baseurl.endswith('/'):
+            self.baseurl += '/'
 
     def get_role(self):
         """Read IAM role from AWS metadata store."""
@@ -172,7 +170,7 @@ class S3Grabber(object):
         """urlgrab(url) copy the file to the local filesystem."""
         request = self._request(url)
         if filename is None:
-            filename = req.get_selector()
+            filename = request.get_selector()
             if filename.startswith('/'):
                 filename = filename[1:]
 
@@ -199,11 +197,11 @@ class S3Grabber(object):
         """urlread(url) return the contents of the file as a string."""
         return urllib2.urlopen(self._request(url)).read()
 
-    def sign(self, request):
+    def sign(self, request, timeval=None):
         """Attach a valid S3 signature to request.
         request - instance of Request
         """
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", timeval or time.gmtime())
         request.add_header('Date', date)
         host = request.get_host()
 

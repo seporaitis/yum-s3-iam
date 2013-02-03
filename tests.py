@@ -14,34 +14,22 @@
 
 import sys
 import unittest
-import os
-import os.path
-import urllib2
-import time
 sys.path.append('.')
 import s3iam
-
-from urlparse import urlparse
 
 
 class S3GrabberTest(unittest.TestCase):
 
     def test_example_sign(self):
         """Test with example data"""
-        req = urllib2.Request("https://johnsmith.s3.amazonaws.com/photos/puppy.jpg")
-        grabber = s3iam.S3Grabber("http://johnsmith.s3.amazonaws.com/", iamrole="s3access")
+        #req = urllib2.Request("https://johnsmith.s3.amazonaws.com/photos/puppy.jpg")
+        grabber = s3iam.S3Grabber("http://johnsmith.s3.amazonaws.com/")
         grabber.access_key = "AKIAIOSFODNN7EXAMPLE"
         grabber.secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         grabber.token = None
         request = grabber._request("photos/puppy.jpg")
-        signature = grabber.sign(request, timeval=time.mktime(time.struct_time(
-            tm_year=2007,
-            tm_mon=3,
-            tm_mday=27,
-            tm_hour=19,
-            tm_min=36,
-            tm_sec=42)))
-        self.assertEqual(signature, "bWq2s1WEIj+Ydj0vQ697zp+IXMU=")
+        signature = grabber.sign(request, timeval=(2013, 1, 1, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(signature.strip(), "g28R8sx2k7a5lW/9jMfCNfnMHjc=")
 
 
 if __name__ == '__main__':
