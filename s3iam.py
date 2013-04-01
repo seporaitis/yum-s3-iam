@@ -68,6 +68,8 @@ def postreposetup_hook(conduit):
                 new_repo.priority = repo.priority
             if hasattr(repo, 'base_persistdir'):
                 new_repo.base_persistdir = repo.base_persistdir
+            if hasattr(repo, 'metadata_expire'):
+                new_repo.metadata_expire = repo.metadata_expire
 
             repos.delete(repo.id)
             repos.add(new_repo)
