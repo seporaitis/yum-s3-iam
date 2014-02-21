@@ -21,6 +21,7 @@ __license__ = "Apache 2.0"
 __version__ = "1.0.1"
 
 
+import urllib
 import urllib2
 import urlparse
 import time
@@ -159,7 +160,7 @@ class S3Grabber(object):
         self.token = data['Token']
 
     def _request(self, path):
-        url = urlparse.urljoin(self.baseurl, path)
+        url = urlparse.urljoin(self.baseurl, urllib.quote_plus(path))
         request = urllib2.Request(url)
         request.add_header('x-amz-security-token', self.token)
         signature = self.sign(request)
