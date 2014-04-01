@@ -22,11 +22,34 @@ __version__ = "1.0.1"
 
 
 import urllib2
+import urllib
 import urlparse
 import time
-import hashlib
 import hmac
-import json
+import sys
+
+try:
+    from hashlib import sha1 as sha
+
+    if sys.version[:3] == "2.4":
+        # we are using an hmac that expects a .new() method.
+        class Faker:
+            def __init__(self, which):
+                self.which = which
+                self.digest_size = self.which().digest_size
+
+            def new(self, *args, **kwargs):
+                return self.which(*args, **kwargs)
+
+        sha = Faker(sha)
+
+except ImportError:
+    import sha
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import yum
 import yum.config
@@ -159,13 +182,11 @@ class S3Grabber(object):
         self.token = data['Token']
 
     def _request(self, path):
-        url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
+        url = urlparse.urljoin(self.baseurl, urllib.quote(path))
         request = urllib2.Request(url)
         request.add_header('x-amz-security-token', self.token)
         signature = self.sign(request)
-        request.add_header('Authorization', "AWS {0}:{1}".format(
-            self.access_key,
-            signature))
+        request.add_header('Authorization', "AWS %s:%s" % (self.access_key, signature))
         return request
 
     def urlgrab(self, url, filename=None, **kwargs):
@@ -231,6 +252,6 @@ class S3Grabber(object):
         digest = hmac.new(
             str(self.secret_key),
             str(sigstring),
-            hashlib.sha1).digest()
+            sha).digest()
         signature = digest.encode('base64')
         return signature

@@ -12,6 +12,9 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch: noarch
 
 Requires:	yum
+%if ! (0%{?rhel} > 5)
+Requires: python-simplejson python-hashlib
+%endif
 
 %description
 Yum package manager plugin for private S3 repositories. 
