@@ -116,7 +116,7 @@ class S3Grabber(object):
             self.baseurl = repo
         else:
             if len(repo.baseurl) != 1:
-                raise yum.plugins.PluginYumExit("s3iam: repository '{0}' "
+                raise yum.plugins.PluginYumExit("s3iam: repository '%s' "
                                                 "must have only one "
                                                 "'baseurl' value" % repo.id)
             else:

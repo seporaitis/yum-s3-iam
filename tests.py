@@ -13,9 +13,76 @@
 # limitations under the License.
 
 import sys
+import os
+import tempfile
+import glob
+import shutil
+import StringIO
+import urllib2
 import unittest
+import rpm
+import yum
+import createrepo
 sys.path.append('.')
 import s3iam
+
+
+PACKAGE_NAME = 'yum-plugin-s3-iam'
+
+
+class YumTestCase(unittest.TestCase):
+
+    baseurl = 'http://test.s3.amazonaws.com/noarch/'
+
+    def _createrepo(self):
+        mdconf = createrepo.MetaDataConfig()
+        mdconf.directory = self.tmpdir
+        mdgen = createrepo.MetaDataGenerator(mdconf)
+        mdgen.doPkgMetadata()
+        mdgen.doRepoMetadata()
+        mdgen.doFinalMove()
+
+    def _mock_urlopen(self, url):
+        if hasattr(url, 'get_full_url'):
+            url = url.get_full_url()
+        if 'security-credentials' in url:
+            return StringIO.StringIO('{"AccessKeyId":"k", "SecretAccessKey":"x", "Token": "t"}')
+        else:
+            # return files from local repo created with _createrepo
+            assert url.startswith(self.baseurl)
+            return open(os.path.join(self.tmpdir, url[len(self.baseurl):]))
+
+    def _init_yum(self):
+        cwd = os.getcwd()
+        yum.config.StartupConf.pluginpath =\
+            yum.config.StartupConf.pluginconfpath = yum.config.ListOption([cwd])
+        yumbase = yum.YumBase()
+        yumbase.preconf.disabled_plugins = '*'
+        yumbase.preconf.enabled_plugins = ['s3iam']
+        yumbase.conf.cachedir = os.path.join(self.tmpdir, '_cache')
+        yumbase.repos.disableRepo('*')
+        yumbase.add_enable_repo('s3test', [self.baseurl], s3_enabled=True)
+        return yumbase
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        # Set up urlopen mock:
+        urllib2.urlopen, urllib2.urlopen_ = self._mock_urlopen, urllib2.urlopen
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+        urllib2.urlopen = urllib2.urlopen_
+
+    def test_yum_available(self):
+        # copy rpm file to tmpdir and create repodata
+        rpmdir = rpm.expandMacro('%_rpmdir')
+        rpmfile = glob.glob(os.path.join(rpmdir, 'noarch', PACKAGE_NAME + '*.rpm'))[0]
+        shutil.copyfile(rpmfile, os.path.join(self.tmpdir, 's3iam.rpm'))
+        self._createrepo()
+
+        yumbase = self._init_yum()
+        available = yumbase.doPackageLists().available
+        self.assertItemsEqual([p.name for p in available], [PACKAGE_NAME])
 
 
 class S3GrabberTest(unittest.TestCase):
