@@ -1,3 +1,5 @@
 test_values.py
 *.pyc
 *.pyo
+dist
+build
