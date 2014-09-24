@@ -22,11 +22,10 @@ class S3GrabberTest(unittest.TestCase):
 
     def test_example_sign(self):
         """Test with example data"""
-        #req = urllib2.Request("https://johnsmith.s3.amazonaws.com/photos/puppy.jpg")
         grabber = s3iam.S3Grabber("http://johnsmith.s3.amazonaws.com/")
         grabber.access_key = "AKIAIOSFODNN7EXAMPLE"
         grabber.secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-        grabber.token = None
+        grabber.token = 'None'
         request = grabber._request("photos/puppy.jpg")
         signature = grabber.sign(request, timeval=(2013, 1, 1, 0, 0, 0, 0, 0, 0))
         self.assertEqual(signature.strip(), "g28R8sx2k7a5lW/9jMfCNfnMHjc=")
