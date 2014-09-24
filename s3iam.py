@@ -37,7 +37,7 @@ from yum.yumRepo import YumRepository
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
-           'config_hook', 'postreposetup_hook']
+           'config_hook', 'prereposetup_hook']
 
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
@@ -50,7 +50,7 @@ def config_hook(conduit):
     yum.config.RepoConf.secret_key = yum.config.Option()
 
 
-def postreposetup_hook(conduit):
+def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
 
     repos = conduit.getRepos()

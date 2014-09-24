@@ -61,7 +61,7 @@ class YumTestCase(unittest.TestCase):
         yumbase.preconf.enabled_plugins = ['s3iam']
         yumbase.conf.cachedir = os.path.join(self.tmpdir, '_cache')
         yumbase.repos.disableRepo('*')
-        yumbase.add_enable_repo('s3test', [self.baseurl], s3_enabled=True)
+        yumbase.add_enable_repo('s3test', [self.baseurl], s3_enabled=True, _async=True)
         return yumbase
 
     def setUp(self):
