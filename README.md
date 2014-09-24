@@ -24,12 +24,9 @@ Read a great blog post by Jeremy Carroll which in depth explains how to
 use this plugin:
 [S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
 
-## What's with the tests?
+## Testing
 
-The tests will fail, except maybe for the aws signature generation
-test. And although this code successfully runs on a live machine, _I
-would like some advice of how I could write tests for Yum plugin/AWS
-API consumer like this one_.
+Use `make test` to run some simple tests.
 
 ## License
 
