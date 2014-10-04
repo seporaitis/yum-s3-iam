@@ -46,6 +46,8 @@ CONDUIT = None
 
 def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
+    yum.config.RepoConf.key_id = yum.config.Option()
+    yum.config.RepoConf.secret_key = yum.config.Option()
 
 
 def postreposetup_hook(conduit):
@@ -62,6 +64,8 @@ def postreposetup_hook(conduit):
             new_repo.basecachedir = repo.basecachedir
             new_repo.gpgcheck = repo.gpgcheck
             new_repo.gpgkey = repo.gpgkey
+            new_repo.key_id = repo.key_id
+            new_repo.secret_key = repo.secret_key
             new_repo.proxy = repo.proxy
             new_repo.enablegroups = repo.enablegroups
             if hasattr(repo, 'priority'):
@@ -93,8 +97,11 @@ class S3Repository(YumRepository):
     def grab(self):
         if not self.grabber:
             self.grabber = S3Grabber(self)
-            self.grabber.get_role()
-            self.grabber.get_credentials()
+            if self.key_id and self.secret_key:
+                self.grabber.set_credentials(self.key_id, self.secret_key)
+            else:
+                self.grabber.get_role()
+                self.grabber.get_credentials()
         return self.grabber
 
 
@@ -158,10 +165,16 @@ class S3Grabber(object):
         self.secret_key = data['SecretAccessKey']
         self.token = data['Token']
 
+    def set_credentials(self, access_key, secret_key):
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.token = None
+
     def _request(self, path):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
         request = urllib2.Request(url)
-        request.add_header('x-amz-security-token', self.token)
+        if self.token:
+            request.add_header('x-amz-security-token', self.token)
         signature = self.sign(request)
         request.add_header('Authorization', "AWS {0}:{1}".format(
             self.access_key,
@@ -221,7 +234,10 @@ class S3Grabber(object):
                 "found '%s'" % host)
 
         resource = "/%s%s" % (bucket, request.get_selector(), )
-        amz_headers = 'x-amz-security-token:%s\n' % self.token
+        if self.token:
+            amz_headers = 'x-amz-security-token:%s\n' % self.token
+        else:
+            amz_headers = ''
         sigstring = ("%(method)s\n\n\n%(date)s\n"
                      "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
                          'method': request.get_method(),
