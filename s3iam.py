@@ -74,6 +74,8 @@ def prereposetup_hook(conduit):
                 new_repo.base_persistdir = repo.base_persistdir
             if hasattr(repo, 'metadata_expire'):
                 new_repo.metadata_expire = repo.metadata_expire
+            if hasattr(repo, 'skip_if_unavailable'):
+                new_repo.skip_if_unavailable = repo.skip_if_unavailable
 
             repos.delete(repo.id)
             repos.add(new_repo)
@@ -197,6 +199,14 @@ class S3Grabber(object):
             while buff:
                 out.write(buff)
                 buff = response.read(8192)
+        except urllib2.HTTPError, e:
+            # Wrap exception as URLGrabError so that YumRepository catches it
+            from urlgrabber.grabber import URLGrabError
+            new_e = URLGrabError(14, '%s on %s' % (e, url))
+            new_e.code = e.code
+            new_e.exception = e
+            new_e.url = url
+            raise new_e
         finally:
             if response:
                 response.close()

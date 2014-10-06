@@ -58,6 +58,8 @@ class YumTestCase(unittest.TestCase):
         if 'security-credentials' in url:
             return StringIO.StringIO('{"AccessKeyId":"k", "SecretAccessKey":"x", "Token": "t"}')
         else:
+            if 'broken' in url:
+                raise urllib2.HTTPError(url, 403, 'Forbidden', None, None)
             # return files from local repo created with _createrepo
             assert url.startswith(self.baseurl)
             return open(os.path.join(self.tmpdir, url[len(self.baseurl):]))
@@ -97,6 +99,24 @@ class YumTestCase(unittest.TestCase):
         yumbase = self._init_yum()
         available = yumbase.doPackageLists().available
         self.assertEqual([p.name for p in available], [PACKAGE_NAME])
+
+    def test_repo_unavailable(self):
+        self._createrepo()
+
+        # Throws RepoError exception
+        yumbase = self._init_yum(
+            baseurl='http://broken.s3.amazonaws.com',
+            skip_if_unavailable=False,
+        )
+        self.assertRaises(yum.Errors.RepoError,
+                          lambda: yumbase.doPackageLists().available)
+
+        # No exception when skip_if_unavailable
+        yumbase = self._init_yum(
+            baseurl='http://broken.s3.amazonaws.com',
+            skip_if_unavailable=True,
+        )
+        yumbase.doPackageLists().available
 
 
 class S3GrabberTest(unittest.TestCase):
