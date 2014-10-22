@@ -12,6 +12,9 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch: noarch
 
 Requires:	yum
+%if ! (0%{?rhel} > 5)
+Requires: python-simplejson python-hashlib
+%endif
 
 %description
 Yum package manager plugin for private S3 repositories. 
@@ -34,7 +37,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %doc s3iam.repo
 %doc LICENSE NOTICE README.md
 /etc/yum/pluginconf.d/s3iam.conf
-/usr/lib/yum-plugins/s3iam.py
+/usr/lib/yum-plugins/s3iam.py*
 
 %changelog
 * Fri May 31 2013 Matt Jamison <matt@mattjamison.com> 1.0-1
