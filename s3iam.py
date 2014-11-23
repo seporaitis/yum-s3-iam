@@ -37,7 +37,7 @@ from yum.yumRepo import YumRepository
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
-           'config_hook', 'postreposetup_hook']
+           'config_hook', 'prereposetup_hook']
 
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
@@ -50,7 +50,7 @@ def config_hook(conduit):
     yum.config.RepoConf.secret_key = yum.config.Option()
 
 
-def postreposetup_hook(conduit):
+def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
 
     repos = conduit.getRepos()
@@ -74,6 +74,8 @@ def postreposetup_hook(conduit):
                 new_repo.base_persistdir = repo.base_persistdir
             if hasattr(repo, 'metadata_expire'):
                 new_repo.metadata_expire = repo.metadata_expire
+            if hasattr(repo, 'skip_if_unavailable'):
+                new_repo.skip_if_unavailable = repo.skip_if_unavailable
 
             repos.delete(repo.id)
             repos.add(new_repo)
@@ -116,7 +118,7 @@ class S3Grabber(object):
             self.baseurl = repo
         else:
             if len(repo.baseurl) != 1:
-                raise yum.plugins.PluginYumExit("s3iam: repository '{0}' "
+                raise yum.plugins.PluginYumExit("s3iam: repository '%s' "
                                                 "must have only one "
                                                 "'baseurl' value" % repo.id)
             else:
@@ -197,6 +199,14 @@ class S3Grabber(object):
             while buff:
                 out.write(buff)
                 buff = response.read(8192)
+        except urllib2.HTTPError, e:
+            # Wrap exception as URLGrabError so that YumRepository catches it
+            from urlgrabber.grabber import URLGrabError
+            new_e = URLGrabError(14, '%s on %s' % (e, url))
+            new_e.code = e.code
+            new_e.exception = e
+            new_e.url = url
+            raise new_e
         finally:
             if response:
                 response.close()
