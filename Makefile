@@ -10,7 +10,7 @@ RPMBUILD_ARGS := \
 	--define "version $(VERSION)" \
 	--define "release $(RELEASE)"
 
-.PHONY: all rpm install
+.PHONY: all rpm install test
 
 all:
 	@echo "Usage: make rpm"
@@ -33,3 +33,6 @@ rpm:
 	rm -Rf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
 	cp $(NAME).spec $(RPM_TOPDIR)/SPECS/
 	rpmbuild $(RPMBUILD_ARGS) -ba --clean $(NAME).spec
+
+test: rpm
+	python tests.py

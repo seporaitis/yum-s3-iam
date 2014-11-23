@@ -14,7 +14,7 @@ BuildArch: noarch
 Requires:	yum
 
 %description
-Yum package manager plugin for private S3 repositories. 
+Yum package manager plugin for private S3 repositories.
 Uses Amazon IAM & EC2 Roles.
 
 %prep
