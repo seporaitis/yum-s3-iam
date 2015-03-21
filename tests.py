@@ -100,6 +100,20 @@ class YumTestCase(unittest.TestCase):
         available = yumbase.doPackageLists().available
         self.assertEqual([p.name for p in available], [PACKAGE_NAME])
 
+    def test_s3_scheme(self):
+        if not RPM_FILE:
+            print >>sys.stderr, 'Skipping:', 'Rpm file required'
+            return
+        # copy rpm file to tmpdir and create repodata
+        shutil.copyfile(RPM_FILE, os.path.join(self.tmpdir, 's3iam.rpm'))
+        self._createrepo()
+
+        yumbase = self._init_yum(
+            baseurl='s3://test.s3.amazonaws.com',
+        )
+        available = yumbase.doPackageLists().available
+        self.assertEqual([p.name for p in available], [PACKAGE_NAME])
+
     def test_repo_unavailable(self):
         self._createrepo()
 

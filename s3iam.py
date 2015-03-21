@@ -24,6 +24,7 @@ __version__ = "1.0.1"
 import urllib2
 import urlparse
 import time
+import re
 import hashlib
 import hmac
 import json
@@ -48,7 +49,23 @@ def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
+    yum.config.RepoConf.baseurl = yum.config.UrlListOption(schemes=('http','ftp','file','https','s3'))
 
+def _fix_s3_urls(urls):
+    if urls.__len__ > 0:
+        fixed_urls = []
+        for url in urls:
+          (s,b,p,q,f,o) = urlparse.urlparse(url)
+          if s == 's3':
+            fixed_urls.append(url.replace('s3','https',1))
+          else:
+            fixed_urls.append(url)
+        urls = fixed_urls
+
+    return urls
+
+def _is_s3_enabled(urls):
+    return True if filter(lambda url:re.search(r'^s3\:\/\/', url), urls).__len__() > 0 else False
 
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
@@ -56,6 +73,9 @@ def prereposetup_hook(conduit):
     repos = conduit.getRepos()
 
     for repo in repos.listEnabled():
+        if not repo.s3_enabled:
+          repo.s3_enabled = _is_s3_enabled(repo.baseurl)
+        repo.baseurl = _fix_s3_urls(repo.baseurl)
         if isinstance(repo, YumRepository) and repo.s3_enabled:
             new_repo = S3Repository(repo.id, repo.baseurl)
             new_repo.name = repo.name
