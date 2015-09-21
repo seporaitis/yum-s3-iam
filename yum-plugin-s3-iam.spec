@@ -37,5 +37,8 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Mon Sep 21 2015 Mathias Brossard <mathias@brossard.org> 1.0.1-1
+Fix for trailing line-feed on signature
+
 * Fri May 31 2013 Matt Jamison <matt@mattjamison.com> 1.0-1
 Initial packaging
