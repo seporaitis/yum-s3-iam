@@ -37,3 +37,4 @@ Apache 2.0 license. See LICENSE.
 - Julius Seporaitis
 - [Robert Melas' code](https://github.com/rmela/yum-s3-plugin/) was
   used as a reference. See NOTICE.
+- Mischa Spiegelmock (fixed urllib2 error)
