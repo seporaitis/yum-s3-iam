@@ -1,6 +1,6 @@
 NAME				= yum-plugin-s3-iam
 VERSION			= 1.0
-RELEASE			= 1
+RELEASE			= 2
 ARCH				= noarch
 
 RPM_TOPDIR ?= $(shell rpm --eval '%{_topdir}')
