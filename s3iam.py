@@ -259,4 +259,4 @@ class S3Grabber(object):
             str(sigstring),
             hashlib.sha1).digest()
         signature = digest.encode('base64')
-        return signature
+        return signature.strip()
