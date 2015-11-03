@@ -32,6 +32,12 @@ Use `make test` to run some simple tests.
 
 Apache 2.0 license. See LICENSE.
 
+## Maintainers
+
+- Mathias Brossard
+- Mischa Spiegelmock
+- Sean Edge
+
 ## Author(s)
 
 - Julius Seporaitis
