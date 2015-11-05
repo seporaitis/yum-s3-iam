@@ -232,7 +232,7 @@ class S3Grabber(object):
         request - instance of Request
         """
         t = timeval or time.gmtime()
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", )
+        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", t)
         request.add_header('Date', date)
         host = request.get_host()
 
