@@ -23,6 +23,7 @@ __version__ = "1.0.2"
 
 import urllib2
 import urlparse
+import datetime
 import time
 import hashlib
 import hmac
@@ -46,6 +47,8 @@ CONDUIT = None
 
 def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
+    yum.config.RepoConf.v4_signature = yum.config.BoolOption(False)
+    yum.config.RepoConf.region = yum.config.Option()
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
 
@@ -59,6 +62,8 @@ def prereposetup_hook(conduit):
         if isinstance(repo, YumRepository) and repo.s3_enabled:
             new_repo = S3Repository(repo.id, repo.baseurl)
             new_repo.name = repo.name
+            new_repo.region = repo.region
+            new_repo.v4_signature = repo.v4_signature
             # new_repo.baseurl = repo.baseurl
             new_repo.mirrorlist = repo.mirrorlist
             new_repo.basecachedir = repo.basecachedir
@@ -117,6 +122,8 @@ class S3Grabber(object):
         if isinstance(repo, basestring):
             self.baseurl = repo
         else:
+            self.region = repo.region
+            self.v4_signature = repo.v4_signature
             if len(repo.baseurl) != 1:
                 raise yum.plugins.PluginYumExit("s3iam: repository '%s' "
                                                 "must have only one "
@@ -175,12 +182,10 @@ class S3Grabber(object):
     def _request(self, path):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
         request = urllib2.Request(url)
-        if self.token:
-            request.add_header('x-amz-security-token', self.token)
-        signature = self.sign(request)
-        request.add_header('Authorization', "AWS {0}:{1}".format(
-            self.access_key,
-            signature))
+        if self.v4_signature:
+            self.signV4(request)
+        else:
+            self.signV2(request)
         return request
 
     def urlgrab(self, url, filename=None, **kwargs):
@@ -222,11 +227,12 @@ class S3Grabber(object):
         """urlread(url) return the contents of the file as a string."""
         return urllib2.urlopen(self._request(url)).read()
 
-    def sign(self, request, timeval=None):
+    def signV2(self, request, timeval=None):
         """Attach a valid S3 signature to request.
         request - instance of Request
         """
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", timeval or time.gmtime())
+        t = timeval or time.gmtime()
+        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", )
         request.add_header('Date', date)
         host = request.get_host()
 
@@ -243,9 +249,10 @@ class S3Grabber(object):
                 "'<bucket>.s3<aws-region>.amazonaws.com'; "
                 "found '%s'" % host)
 
-        resource = "/%s%s" % (bucket, request.get_selector(), )
+        resource = "/%s%s" % (bucket, request.get_selector())
         if self.token:
             amz_headers = 'x-amz-security-token:%s\n' % self.token
+            request.add_header('x-amz-security-token', self.token)
         else:
             amz_headers = ''
         sigstring = ("%(method)s\n\n\n%(date)s\n"
@@ -259,4 +266,56 @@ class S3Grabber(object):
             str(sigstring),
             hashlib.sha1).digest()
         signature = digest.encode('base64')
-        return signature.strip()
+
+        authorization = "AWS {0}:{1}".format(self.access_key, signature)
+        request.add_header('Authorization', authorization)
+
+    def derive(self, key, msg):
+        return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
+
+    def deriveKey(self, key, date, region, service):
+        kDate = self.derive(('AWS4' + key).encode('utf-8'), date)
+        kRegion = self.derive(kDate, region)
+        kService = self.derive(kRegion, service)
+        return self.derive(kService, 'aws4_request')
+
+    def signV4(self, request, timeval=None):
+        algorithm = 'AWS4-HMAC-SHA256'
+        t = datetime.datetime.utcnow()
+
+        amzdate = t.strftime('%Y%m%dT%H%M%SZ')
+        amz_headers = ('host:%s\nx-amz-date:%s\n' %
+                       (request.get_host(), amzdate))
+        signed_headers = 'host;x-amz-date'
+        if self.token:
+            amz_headers += 'x-amz-security-token:%s\n' % self.token
+            signed_headers += ';x-amz-security-token'
+            request.add_header('x-amz-security-token', self.token)
+
+        # Hash request
+        content_h = hashlib.sha256('').hexdigest() # Empty content
+        req = ('GET\n%s\n%s\n%s\n%s' %
+               (request.get_selector(), amz_headers, signed_headers, content_h))
+        req_hash = hashlib.sha256(req).hexdigest()
+
+        # Assemble content to be signed
+        datestamp = t.strftime('%Y%m%d')
+        scope = datestamp + '/' + self.region + '/s3/aws4_request'
+        sign_content = '%s\n%s\n%s\n%s' % (algorithm, amzdate, scope, req_hash)
+
+        # Get derived key
+        signing_key = self.deriveKey(self.secret_key, datestamp,
+                                     self.region, 's3')
+
+        # Compute signature
+        signature = hmac.new(signing_key, (sign_content).encode('utf-8'),
+                             hashlib.sha256).hexdigest()
+
+        # Assemble 'Authorization' header value
+        credential = self.access_key + '/' + scope
+        auth = (('%s Credential=%s, SignedHeaders=%s, Signature=%s') %
+                (algorithm, credential, signed_headers, signature))
+
+        request.add_header('x-amz-content-sha256', content_h)
+        request.add_header('x-amz-date', amzdate)
+        request.add_header('Authorization', auth)
