@@ -294,7 +294,7 @@ class S3Grabber(object):
 
         # Hash request
         content_h = hashlib.sha256('').hexdigest() # Empty content
-        req = ('GET\n%s\n%s\n%s\n%s' %
+        req = ('GET\n%s\n\n%s\n%s\n%s' %
                (request.get_selector(), amz_headers, signed_headers, content_h))
         req_hash = hashlib.sha256(req).hexdigest()
 
