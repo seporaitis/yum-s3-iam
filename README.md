@@ -1,26 +1,30 @@
 # yum-s3-iam
 
-This is [Yum](http://yum.baseurl.org/) plugin that lets you use
-private S3 buckets as package repositories. Plugin uses AWS
-[Identity and Access Management](http://aws.amazon.com/iam/) (IAM)
-roles for authorization, so you do not need to enter your
-access/secret key pair anywhere in configuration.
+This is a [yum](http://yum.baseurl.org/) plugin that allows for
+private AWS S3 buckets to be used as package repositories. The plugin
+utilizes AWS [Identity and Access Management](http://aws.amazon.com/iam/)
+(IAM) roles for authorization, removing any requirement for an access or
+secret key pair to be defined anywhere in your repository configuration.
 
-## What is IAM Role?
+## What is an IAM Role?
 
-Roles can be assumed by AWS EC2 instances to gain special
-permissions. About how it works I suggest you dig through
+IAM Roles are used to control access to AWS services and resources.
+
+For further details, take a look at the AWS-provided documentation:
 [docs](http://aws.amazon.com/documentation/iam/).
 
-What is important for us: when you assign role to an EC2 instance,
-a constantly rotated (by AWS) access credentials become available for
-access within the instance. This means you don't need to store them
-anywhere, to change and/or rotate them, and you have a fine-grain
-control on what actions can be made using those credentials.
+Why it's useful: when you assign an IAM role to an EC2 instance,
+credentials to access the instance are automatically provided by AWS.
+This removes the need to store them, change and/or rotate
+them, while also providing fine-grain controls over what actions can
+be performed when using the credentials.
 
-## How-to set it up?
+This particular plug-in makes use of the IAM credentials when accessing
+S3 buckets backing a yum repository.
 
-Read a great blog post by Jeremy Carroll which in depth explains how to
+## How to set it up?
+
+There a great blog post by Jeremy Carroll which explains in depth how to
 use this plugin:
 [S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
 
