@@ -89,6 +89,7 @@ Apache 2.0 license. See LICENSE.
 - Mathias Brossard
 - Mischa Spiegelmock
 - Sean Edge
+- [Michal Bicz](https://github.com/bemehow)
 
 ## Author(s)
 
