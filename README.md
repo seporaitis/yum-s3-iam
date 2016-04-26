@@ -26,7 +26,59 @@ use this plugin:
 
 ## Testing
 
-Use `make test` to run some simple tests.
+### Unit testing
+* Use `make test` to run some simple tests.
+
+### Integration Testing (with Docker)
+
+The test is run in the containerized environment, based on [centos:6](https://hub.docker.com/_/centos/) Docker image.
+* The usual pre-requisites are necessary to configure docker runtime and they're not covered here.
+Make sure you can run `docker ps` successfully before starting.
+* Use `make dtest` to run integration test in a docker container.
+ Sample output:
+
+```
+(default) ❯ make dtest
+docker build -t pbase/yum-plugin-s3-iam .
+Sending build context to Docker daemon 567.3 kB
+Step 1 : FROM centos:6
+ ---> ed452988fb6e
+Step 2 : RUN yum -y install createrepo rpm-build && yum clean all
+ ---> Using cache
+ ---> ffe4e2c9256f
+Step 3 : WORKDIR /tmp/
+ ---> Using cache
+ ---> f7e45933a0f8
+Step 4 : ADD . /tmp/
+ ---> df825cd111c7
+Removing intermediate container 4a52af4336e7
+Step 5 : ADD tests.py /tmp/s3iam_tests.py
+ ---> 13e5ec064062
+Removing intermediate container 86ecb5cb7478
+Step 6 : RUN make rpm
+ ---> Running in 8d70496f764d
+ ---> 76d497363a83
+Removing intermediate container 8d70496f764d
+Step 7 : RUN echo $REPO > /etc/yum.repos.d/s3iam.repo
+ ---> Running in d494f22a7d11
+ ...
+ ---> f18f8c10b97f
+Removing intermediate container d494f22a7d11
+Step 8 : CMD python /tmp/s3iam_tests.py
+ ---> Running in d87f96a3f19b
+ ---> 309c415ce206
+Removing intermediate container d87f96a3f19b
+Successfully built 309c415ce206
+docker run pbase/yum-plugin-s3-iam:latest
+........................
+----------------------------------------------------------------------
+Ran 24 tests in 4.138s
+
+OK
+
+```
+
+Please see [Dockerfile](./Dockerfile) for more information
 
 ## License
 

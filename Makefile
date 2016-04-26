@@ -2,6 +2,8 @@ NAME				= yum-plugin-s3-iam
 VERSION			= 1.0.2
 RELEASE			= 1
 ARCH				= noarch
+OWNER 		  = pbase
+IMAGE       = $(OWNER)/$(NAME)
 
 RPM_TOPDIR ?= $(shell rpm --eval '%{_topdir}')
 
@@ -10,7 +12,7 @@ RPMBUILD_ARGS := \
 	--define "version $(VERSION)" \
 	--define "release $(RELEASE)"
 
-.PHONY: all rpm install test
+.PHONY: all rpm install test dtest dshell
 
 all:
 	@echo "Usage: make rpm"
@@ -36,3 +38,12 @@ rpm:
 
 test: rpm
 	python tests.py
+
+dshell:
+	export REPO=$$(cat s3iam.repo ) && docker run -e REPO="$$REPO" -it $(IMAGE):latest /bin/bash
+
+dbuild:
+	docker build -t $(IMAGE) .
+
+dtest: dbuild
+	docker run $(IMAGE):latest
