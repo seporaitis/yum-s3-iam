@@ -28,6 +28,7 @@ import time
 import hashlib
 import hmac
 import json
+import re
 
 import yum
 import yum.config
@@ -47,10 +48,43 @@ CONDUIT = None
 
 def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
-    yum.config.RepoConf.v4_signature = yum.config.BoolOption(False)
     yum.config.RepoConf.region = yum.config.Option()
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
+    yum.config.RepoConf.baseurl = yum.config.UrlListOption(
+        schemes=('http', 'https', 's3')
+    )
+
+
+def parse_url(url):
+    # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html
+
+    # http[s]://<bucket>.s3.amazonaws.com
+    m = re.match(r'(http|https|s3)://([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])[.]s3[.]amazonaws[.]com(.*)$', url)
+    if m:
+        return (m.group(2), None, m.group(3))
+
+    # http[s]://<bucket>.s3-<aws-region>.amazonaws.com
+    m = re.match(r'(http|https|s3)://([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])[.]s3-([a-z0-9-]+)[.]amazonaws[.]com(.*)$', url)
+    if m:
+        return (m.group(2), m.group(3), m.group(4))
+
+    # http[s]://s3.amazonaws.com/<bucket>
+    m = re.match(r'(http|https|s3)://s3[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
+    if m:
+        return (m.group(2), 'us-east-1', m.group(3))
+
+    # http[s]://s3-<region>.amazonaws.com/<bucket>
+    m = re.match(r'(http|https|s3)://s3-([a-z0-9-]+)[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
+    if m:
+        return (m.group(3), m.group(2), m.group(4))
+
+    return (None, None, None)
+
+
+def replace_repo(repos, repo):
+    repos.delete(repo.id)
+    repos.add(S3Repository(repo.id, repo))
 
 
 def prereposetup_hook(conduit):
@@ -59,40 +93,49 @@ def prereposetup_hook(conduit):
     repos = conduit.getRepos()
 
     for repo in repos.listEnabled():
+        if re.match(r'^s3://', repo.baseurl):
+            repo.s3_enabled = 1
         if isinstance(repo, YumRepository) and repo.s3_enabled:
-            new_repo = S3Repository(repo.id, repo.baseurl)
-            new_repo.name = repo.name
-            new_repo.region = repo.region
-            new_repo.v4_signature = repo.v4_signature
-            # new_repo.baseurl = repo.baseurl
-            new_repo.mirrorlist = repo.mirrorlist
-            new_repo.basecachedir = repo.basecachedir
-            new_repo.gpgcheck = repo.gpgcheck
-            new_repo.gpgkey = repo.gpgkey
-            new_repo.key_id = repo.key_id
-            new_repo.secret_key = repo.secret_key
-            new_repo.proxy = repo.proxy
-            new_repo.enablegroups = repo.enablegroups
-            if hasattr(repo, 'priority'):
-                new_repo.priority = repo.priority
-            if hasattr(repo, 'base_persistdir'):
-                new_repo.base_persistdir = repo.base_persistdir
-            if hasattr(repo, 'metadata_expire'):
-                new_repo.metadata_expire = repo.metadata_expire
-            if hasattr(repo, 'skip_if_unavailable'):
-                new_repo.skip_if_unavailable = repo.skip_if_unavailable
-
-            repos.delete(repo.id)
-            repos.add(new_repo)
+            replace_repo(repos, repo)
 
 
 class S3Repository(YumRepository):
     """Repository object for Amazon S3, using IAM Roles."""
 
-    def __init__(self, repoid, baseurl):
+    def __init__(self, repoid, repo):
         super(S3Repository, self).__init__(repoid)
+
+        bucket, region, path = parse_url(repo.baseurl)
+
+        if bucket is None:
+            raise yum.plugins.PluginYumExit(
+                "s3iam: unable to parse url %s'" % repo.baseurl)
+
+        if region:
+            self.baseurl = "https://%s.amazonaws.com/%s" % (bucket, path)
+        else:
+            self.baseurl = "https://s3-%s.amazonaws.com/%s%s" % (region, bucket, path)
+
+        self.name = repo.name
+        self.region = repo.region if repo.region else region
+        self.mirrorlist = repo.mirrorlist
+        self.basecachedir = repo.basecachedir
+        self.gpgcheck = repo.gpgcheck
+        self.gpgkey = repo.gpgkey
+        self.key_id = repo.key_id
+        self.secret_key = repo.secret_key
+        self.proxy = repo.proxy
+        self.enablegroups = repo.enablegroups
+        if hasattr(repo, 'priority'):
+            self.priority = repo.priority
+        if hasattr(repo, 'base_persistdir'):
+            self.base_persistdir = repo.base_persistdir
+        if hasattr(repo, 'metadata_expire'):
+            self.metadata_expire = repo.metadata_expire
+        if hasattr(repo, 'skip_if_unavailable'):
+            self.skip_if_unavailable = repo.skip_if_unavailable
+
         self.iamrole = None
-        self.baseurl = baseurl
         self.grabber = None
         self.enable()
 
@@ -123,7 +166,6 @@ class S3Grabber(object):
             self.baseurl = repo
         else:
             self.region = repo.region
-            self.v4_signature = repo.v4_signature
             if len(repo.baseurl) != 1:
                 raise yum.plugins.PluginYumExit("s3iam: repository '%s' "
                                                 "must have only one "
@@ -182,7 +224,7 @@ class S3Grabber(object):
     def _request(self, path):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
         request = urllib2.Request(url)
-        if self.v4_signature:
+        if self.region:
             self.signV4(request)
         else:
             self.signV2(request)
@@ -236,20 +278,7 @@ class S3Grabber(object):
         request.add_header('Date', date)
         host = request.get_host()
 
-        # TODO: bucket name finding is ugly, I should find a way to support
-        # both naming conventions: http://bucket.s3.amazonaws.com/ and
-        # http://s3.amazonaws.com/bucket/
-        try:
-            pos = host.find(".s3")
-            assert pos != -1
-            bucket = host[:pos]
-        except AssertionError:
-            raise yum.plugins.PluginYumExit(
-                "s3iam: baseurl hostname should be in format: "
-                "'<bucket>.s3<aws-region>.amazonaws.com'; "
-                "found '%s'" % host)
-
-        resource = "/%s%s" % (bucket, request.get_selector())
+        resource = "/%s" % (request.get_selector())
         if self.token:
             amz_headers = 'x-amz-security-token:%s\n' % self.token
             request.add_header('x-amz-security-token', self.token)
@@ -293,7 +322,7 @@ class S3Grabber(object):
             request.add_header('x-amz-security-token', self.token)
 
         # Hash request
-        content_h = hashlib.sha256('').hexdigest() # Empty content
+        content_h = hashlib.sha256('').hexdigest()  # Empty content
         req = ('GET\n%s\n\n%s\n%s\n%s' %
                (request.get_selector(), amz_headers, signed_headers, content_h))
         req_hash = hashlib.sha256(req).hexdigest()
