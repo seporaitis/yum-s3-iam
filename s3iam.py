@@ -104,6 +104,7 @@ class S3Repository(YumRepository):
             if self.key_id and self.secret_key:
                 self.grabber.set_credentials(self.key_id, self.secret_key)
             elif self.delegated_role:
+                self.grabber.get_region()
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
                 self.grabber.get_role()
@@ -182,7 +183,7 @@ class S3Grabber(object):
         Note: This method should be explicitly called after constructing new
               object, as in 'explicit is better than implicit'.
         """
-        sts_conn = boto.sts.connect_to_region(self.get_region())
+        sts_conn = boto.sts.connect_to_region(self.region)
         assumed_role = sts_conn.assume_role(delegated_role, 'yum')
 
         self.access_key = assumed_role.credentials.access_key
@@ -190,7 +191,7 @@ class S3Grabber(object):
         self.token = assumed_role.credentials.session_token
 
     def get_region(self):
-
+        """Read region from AWS metadata store."""
         request = urllib2.Request(
             urlparse.urljoin(
                 "http://169.254.169.254",
@@ -204,8 +205,7 @@ class S3Grabber(object):
         finally:
             if response:
                 response.close()
-        region = data[:-1]
-        return region
+        self.region = data[:-1]
 
     def _request(self, path):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
