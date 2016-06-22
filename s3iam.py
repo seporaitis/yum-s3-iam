@@ -33,6 +33,8 @@ import yum.config
 import yum.Errors
 import yum.plugins
 
+import boto.sts
+
 from yum.yumRepo import YumRepository
 
 
@@ -48,7 +50,7 @@ def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
-
+    yum.config.RepoConf.delegated_role = conduit.confString('main', 'delegated_role', default=None)
 
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
@@ -101,6 +103,8 @@ class S3Repository(YumRepository):
             self.grabber = S3Grabber(self)
             if self.key_id and self.secret_key:
                 self.grabber.set_credentials(self.key_id, self.secret_key)
+            elif self.delegated_role:
+                self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
                 self.grabber.get_role()
                 self.grabber.get_credentials()
@@ -171,6 +175,37 @@ class S3Grabber(object):
         self.access_key = access_key
         self.secret_key = secret_key
         self.token = None
+
+    def get_delegated_role_credentials(self, delegated_role):
+        """Collect temporary credentials from AWS STS service. Uses
+        delegated_role value from configuration.
+        Note: This method should be explicitly called after constructing new
+              object, as in 'explicit is better than implicit'.
+        """
+        sts_conn = boto.sts.connect_to_region(self.get_region())
+        assumed_role = sts_conn.assume_role(delegated_role, 'yum')
+
+        self.access_key = assumed_role.credentials.access_key
+        self.secret_key = assumed_role.credentials.secret_key
+        self.token = assumed_role.credentials.session_token
+
+    def get_region(self):
+
+        request = urllib2.Request(
+            urlparse.urljoin(
+                "http://169.254.169.254",
+                "/latest/meta-data/placement/availability-zone"
+            ))
+
+        response = None
+        try:
+            response = urllib2.urlopen(request)
+            data = response.read()
+        finally:
+            if response:
+                response.close()
+        region = data[:-1]
+        return region
 
     def _request(self, path):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
