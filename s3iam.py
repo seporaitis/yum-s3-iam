@@ -104,7 +104,7 @@ class S3Repository(YumRepository):
             if self.key_id and self.secret_key:
                 self.grabber.set_credentials(self.key_id, self.secret_key)
             elif self.delegated_role:
-                self.grabber.get_region()
+                self.grabber.get_instance_region()
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
                 self.grabber.get_role()
@@ -190,7 +190,7 @@ class S3Grabber(object):
         self.secret_key = assumed_role.credentials.secret_key
         self.token = assumed_role.credentials.session_token
 
-    def get_region(self):
+    def get_instance_region(self):
         """Read region from AWS metadata store."""
         request = urllib2.Request(
             urlparse.urljoin(
