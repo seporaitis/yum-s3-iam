@@ -33,8 +33,6 @@ import yum.config
 import yum.Errors
 import yum.plugins
 
-import boto.sts
-
 from yum.yumRepo import YumRepository
 
 
@@ -183,6 +181,8 @@ class S3Grabber(object):
         Note: This method should be explicitly called after constructing new
               object, as in 'explicit is better than implicit'.
         """
+        import boto.sts
+
         sts_conn = boto.sts.connect_to_region(self.region)
         assumed_role = sts_conn.assume_role(delegated_role, 'yum')
 
