@@ -13,14 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-__author__ = "Julius Seporaitis"
-__email__ = "julius@seporaitis.net"
-__copyright__ = "Copyright 2012, Julius Seporaitis"
-__license__ = "Apache 2.0"
-__version__ = "1.0.2"
-
-
 import urllib2
 import urlparse
 import time
@@ -34,6 +26,12 @@ import yum.Errors
 import yum.plugins
 
 from yum.yumRepo import YumRepository
+
+__author__ = "Julius Seporaitis"
+__email__ = "julius@seporaitis.net"
+__copyright__ = "Copyright 2012, Julius Seporaitis"
+__license__ = "Apache 2.0"
+__version__ = "1.0.3"
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
@@ -49,6 +47,7 @@ def config_hook(conduit):
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
     yum.config.RepoConf.delegated_role = yum.config.Option()
+
 
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
