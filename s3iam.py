@@ -48,7 +48,7 @@ def config_hook(conduit):
     yum.config.RepoConf.s3_enabled = yum.config.BoolOption(False)
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
-    yum.config.RepoConf.delegated_role = conduit.confString('main', 'delegated_role', default=None)
+    yum.config.RepoConf.delegated_role = yum.config.Option()
 
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""

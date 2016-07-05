@@ -22,3 +22,5 @@ failovermethod=priority
 enabled=1
 s3_enabled=1
 gpgcheck=0
+; provide a delegated role arn to support a bucket in a different account
+;delegated_role=arn:aws:iam::XXXXXXXXXXXX:role/some-role
