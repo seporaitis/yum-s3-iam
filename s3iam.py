@@ -51,6 +51,7 @@ def config_hook(conduit):
     yum.config.RepoConf.region = yum.config.Option()
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
+    yum.config.RepoConf.delegated_role = conduit.confString('main', 'delegated_role', default=None)
     yum.config.RepoConf.baseurl = yum.config.UrlListOption(
         schemes=('http', 'https', 's3')
     )
@@ -85,7 +86,6 @@ def parse_url(url):
 def replace_repo(repos, repo):
     repos.delete(repo.id)
     repos.add(S3Repository(repo.id, repo))
-
 
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
@@ -149,6 +149,9 @@ class S3Repository(YumRepository):
             self.grabber = S3Grabber(self)
             if self.key_id and self.secret_key:
                 self.grabber.set_credentials(self.key_id, self.secret_key)
+            elif self.delegated_role:
+                self.grabber.get_instance_region()
+                self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
                 self.grabber.get_role()
                 self.grabber.get_credentials()
@@ -220,6 +223,38 @@ class S3Grabber(object):
         self.access_key = access_key
         self.secret_key = secret_key
         self.token = None
+
+    def get_delegated_role_credentials(self, delegated_role):
+        """Collect temporary credentials from AWS STS service. Uses
+        delegated_role value from configuration.
+        Note: This method should be explicitly called after constructing new
+              object, as in 'explicit is better than implicit'.
+        """
+        import boto.sts
+
+        sts_conn = boto.sts.connect_to_region(self.region)
+        assumed_role = sts_conn.assume_role(delegated_role, 'yum')
+
+        self.access_key = assumed_role.credentials.access_key
+        self.secret_key = assumed_role.credentials.secret_key
+        self.token = assumed_role.credentials.session_token
+
+    def get_instance_region(self):
+        """Read region from AWS metadata store."""
+        request = urllib2.Request(
+            urlparse.urljoin(
+                "http://169.254.169.254",
+                "/latest/meta-data/placement/availability-zone"
+            ))
+
+        response = None
+        try:
+            response = urllib2.urlopen(request)
+            data = response.read()
+        finally:
+            if response:
+                response.close()
+        self.region = data[:-1]
 
     def _request(self, path):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
