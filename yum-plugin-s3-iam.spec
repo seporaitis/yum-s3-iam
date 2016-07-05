@@ -37,6 +37,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Tue Jul 05 2016 Mathias Brossard <mathias@brossard.org> 1.0.3-1
+Add support for delegated roles
+
 * Tue Nov 03 2015 Mathias Brossard <mathias@brossard.org> 1.0.2-1
 Fix for trailing line-feed on signature on newer python 2.7
 
