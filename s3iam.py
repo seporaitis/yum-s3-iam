@@ -51,7 +51,7 @@ def config_hook(conduit):
     yum.config.RepoConf.region = yum.config.Option()
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
-    yum.config.RepoConf.delegated_role = conduit.confString('main', 'delegated_role', default=None)
+    yum.config.RepoConf.delegated_role = yum.config.Option()
     yum.config.RepoConf.baseurl = yum.config.UrlListOption(
         schemes=('http', 'https', 's3')
     )
