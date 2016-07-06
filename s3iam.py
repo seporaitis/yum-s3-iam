@@ -256,13 +256,13 @@ class S3Grabber(object):
                 response.close()
         self.region = data[:-1]
 
-    def _request(self, path):
+    def _request(self, path, timeval=None):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
         request = urllib2.Request(url)
         if self.region:
-            self.signV4(request)
+            self.signV4(request, timeval)
         else:
-            self.signV2(request)
+            self.signV2(request, timeval)
         return request
 
     def urlgrab(self, url, filename=None, **kwargs):
