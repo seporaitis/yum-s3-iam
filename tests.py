@@ -135,5 +135,32 @@ class S3GrabberTest(unittest.TestCase):
         self.assertEqual(request.get_header('Authorization').strip(),
                          "AWS " + grabber.access_key + ":bWq2s1WEIj+Ydj0vQ697zp+IXMU=")
 
+class UrlTests(unittest.TestCase):
+    def test_urls(self):
+        (b, r, p) = s3iam.parse_url('https://foo.s3.amazonaws.com/path')
+        self.assertEqual(b, 'foo')
+        self.assertEqual(r, None)
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://www.foo.com.s3.amazonaws.com/path')
+        self.assertEqual(b, 'www.foo.com')
+        self.assertEqual(r, None)
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://foo.s3-us-west-2.amazonaws.com/path')
+        self.assertEqual(b, 'foo')
+        self.assertEqual(r, 'us-west-2')
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://s3.amazonaws.com/bar/path')
+        self.assertEqual(b, 'bar')
+        self.assertEqual(r, 'us-east-1')
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://s3-us-west-1.amazonaws.com/bar/path')
+        self.assertEqual(b, 'bar')
+        self.assertEqual(r, 'us-west-1')
+        self.assertEqual(p, '/path')
+
 if __name__ == '__main__':
     unittest.main()
