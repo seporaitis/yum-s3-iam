@@ -45,7 +45,7 @@ class MDCallback(object):
 
 class YumTestCase(unittest.TestCase):
 
-    baseurl = 'http://test.s3.amazonaws.com/noarch/'
+    baseurl = 'https://test.s3.amazonaws.com/noarch/'
 
     def _createrepo(self):
         mdconf = createrepo.MetaDataConfig()
@@ -108,7 +108,7 @@ class YumTestCase(unittest.TestCase):
 
         # Throws RepoError exception
         yumbase = self._init_yum(
-            baseurl='http://broken.s3.amazonaws.com',
+            baseurl='https://broken.s3.amazonaws.com',
             skip_if_unavailable=False,
         )
         self.assertRaises(yum.Errors.RepoError,
@@ -116,7 +116,7 @@ class YumTestCase(unittest.TestCase):
 
         # No exception when skip_if_unavailable
         yumbase = self._init_yum(
-            baseurl='http://broken.s3.amazonaws.com',
+            baseurl='https://broken.s3.amazonaws.com',
             skip_if_unavailable=True,
         )
         yumbase.doPackageLists().available
