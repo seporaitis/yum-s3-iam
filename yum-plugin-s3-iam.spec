@@ -38,10 +38,10 @@ rm -rf ${RPM_BUILD_ROOT}
 
 %changelog
 * Tue Jul 05 2016 Mathias Brossard <mathias@brossard.org> 1.0.3-1
-Add support for delegated roles
+Add support for delegated roles (@ToneD)
 
 * Tue Nov 03 2015 Mathias Brossard <mathias@brossard.org> 1.0.2-1
-Fix for trailing line-feed on signature on newer python 2.7
+Fix for trailing line-feed on signature on newer python 2.7 (@mbrossard)
 
 * Fri May 31 2013 Matt Jamison <matt@mattjamison.com> 1.0-1
 Initial packaging
