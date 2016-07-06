@@ -42,6 +42,8 @@ __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
 CONDUIT = None
+OPTIONAL_ATTRIBUTES = ['priority', 'base_persistdir', 'metadata_expire',
+                       'skip_if_unavailable', 'keepcache', 'priority']
 UNSUPPORTED_ATTRIBUTES = ['mirrorlist', 'proxy']
 
 
@@ -122,22 +124,16 @@ class S3Repository(YumRepository):
 
         self.name = repo.name
         self.region = repo.region if repo.region else region
-        self.mirrorlist = repo.mirrorlist
         self.basecachedir = repo.basecachedir
         self.gpgcheck = repo.gpgcheck
         self.gpgkey = repo.gpgkey
         self.key_id = repo.key_id
         self.secret_key = repo.secret_key
-        self.proxy = repo.proxy
         self.enablegroups = repo.enablegroups
-        if hasattr(repo, 'priority'):
-            self.priority = repo.priority
-        if hasattr(repo, 'base_persistdir'):
-            self.base_persistdir = repo.base_persistdir
-        if hasattr(repo, 'metadata_expire'):
-            self.metadata_expire = repo.metadata_expire
-        if hasattr(repo, 'skip_if_unavailable'):
-            self.skip_if_unavailable = repo.skip_if_unavailable
+
+        for attr in OPTIONAL_ATTRIBUTES:
+            if hasattr(repo, attr):
+                setattr(self, attr, getattr(repo, attr))
 
         for attr in UNSUPPORTED_ATTRIBUTES:
             if getattr(repo, attr):
