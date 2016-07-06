@@ -167,6 +167,7 @@ class S3Grabber(object):
         """
         if isinstance(repo, basestring):
             self.baseurl = repo
+            self.region = None
         else:
             self.region = repo.region
             if len(repo.baseurl) != 1:
