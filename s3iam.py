@@ -309,11 +309,11 @@ class S3Grabber(object):
         request - instance of Request
         """
         t = timeval or time.gmtime()
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT", t)
+        date = time.strftime("%a, %d %b %Y %H:%M:%S +0000", t)
         request.add_header('Date', date)
-        host = request.get_host()
 
-        resource = "/%s" % (request.get_selector())
+        (bucket, ignore, path) = parse_url(request.get_full_url())
+        resource = '/' + bucket + path
         if self.token:
             amz_headers = 'x-amz-security-token:%s\n' % self.token
             request.add_header('x-amz-security-token', self.token)

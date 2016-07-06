@@ -123,14 +123,14 @@ class S3GrabberTest(unittest.TestCase):
 
     def test_example_sign(self):
         """Test with example data"""
+        # See http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html
         grabber = s3iam.S3Grabber("http://johnsmith.s3.amazonaws.com/")
         grabber.access_key = "AKIAIOSFODNN7EXAMPLE"
         grabber.secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-        grabber.token = 'None'
-        request = grabber._request("photos/puppy.jpg")
-        signature = grabber.sign(request, timeval=(2013, 1, 1, 0, 0, 0, 0, 0, 0))
-        self.assertEqual(signature.strip(), "g28R8sx2k7a5lW/9jMfCNfnMHjc=")
-
+        grabber.token = None
+        request = grabber._request("/photos/puppy.jpg", timeval=(2007, 3, 27, 19, 36, 42, 1, 0, 0))
+        self.assertEqual(request.get_header('Authorization').strip(),
+                         "AWS " + grabber.access_key + ":bWq2s1WEIj+Ydj0vQ697zp+IXMU=")
 
 if __name__ == '__main__':
     unittest.main()
