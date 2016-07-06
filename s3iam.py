@@ -114,8 +114,8 @@ class S3Repository(YumRepository):
         bucket, region, path = parse_url(repo.baseurl)
 
         if bucket is None:
-            raise yum.plugins.PluginYumExit(
-                "s3iam: unable to parse url %s'" % repo.baseurl)
+            msg = "s3iam: unable to parse url %s'" % repo.baseurl
+            raise yum.plugins.PluginYumExit(msg)
 
         if region:
             self.baseurl = "https://s3-%s.amazonaws.com/%s%s" % (region, bucket, path)
@@ -176,9 +176,9 @@ class S3Grabber(object):
         else:
             self.region = repo.region
             if len(repo.baseurl) != 1:
-                raise yum.plugins.PluginYumExit("s3iam: repository '%s' "
-                                                "must have only one "
-                                                "'baseurl' value" % repo.id)
+                msg = "%s: repository '%s' must" % (__file__, repo.id)
+                msg += 'have only one baseurl value'
+                raise yum.plugins.PluginYumExit(msg)
             else:
                 self.baseurl = repo.baseurl[0]
         # Ensure urljoin doesn't ignore base path:
