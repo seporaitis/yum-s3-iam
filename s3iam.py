@@ -361,7 +361,7 @@ class S3Grabber(object):
             str(self.secret_key),
             str(sigstring),
             hashlib.sha1).digest()
-        signature = digest.encode('base64')
+        signature = digest.encode('base64').rstrip()
 
         authorization = "AWS {0}:{1}".format(self.access_key, signature)
         request.add_header('Authorization', authorization)
