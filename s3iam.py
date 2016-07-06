@@ -112,9 +112,9 @@ class S3Repository(YumRepository):
                 "s3iam: unable to parse url %s'" % repo.baseurl)
 
         if region:
-            self.baseurl = "https://%s.amazonaws.com/%s" % (bucket, path)
-        else:
             self.baseurl = "https://s3-%s.amazonaws.com/%s%s" % (region, bucket, path)
+        else:
+            self.baseurl = "https://%s.s3.amazonaws.com%s" % (bucket, path)
 
         self.name = repo.name
         self.region = repo.region if repo.region else region
