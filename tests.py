@@ -109,7 +109,7 @@ class YumTestCase(unittest.TestCase):
         # Throws RepoError exception
         yumbase = self._init_yum(
             baseurl='https://broken.s3.amazonaws.com',
-            skip_if_unavailable=False,
+            retries=0, skip_if_unavailable=False,
         )
         self.assertRaises(yum.Errors.RepoError,
                           lambda: yumbase.doPackageLists().available)
@@ -117,7 +117,7 @@ class YumTestCase(unittest.TestCase):
         # No exception when skip_if_unavailable
         yumbase = self._init_yum(
             baseurl='https://broken.s3.amazonaws.com',
-            skip_if_unavailable=True,
+            retries=0, skip_if_unavailable=True,
         )
         yumbase.doPackageLists().available
 
