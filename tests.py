@@ -39,6 +39,9 @@ class MDCallback(object):
     def log(self, msg):
         pass
 
+    def errorlog(self, msg):
+        pass
+
 
 class YumTestCase(unittest.TestCase):
 
