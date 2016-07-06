@@ -42,6 +42,9 @@ __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
 CONDUIT = None
+DEFAULT_DELAY = 3
+DEFAULT_BACKOFF = 2
+BUFFER_SIZE = 1024 * 1024
 OPTIONAL_ATTRIBUTES = ['priority', 'base_persistdir', 'metadata_expire',
                        'skip_if_unavailable', 'keepcache', 'priority']
 UNSUPPORTED_ATTRIBUTES = ['mirrorlist', 'proxy']
@@ -56,6 +59,9 @@ def config_hook(conduit):
     yum.config.RepoConf.baseurl = yum.config.UrlListOption(
         schemes=('http', 'https', 's3', 'ftp', 'file')
     )
+    yum.config.RepoConf.backoff = yum.config.Option()
+    yum.config.RepoConf.delay = yum.config.Option()
+
 
 def parse_url(url):
     # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html
@@ -131,6 +137,10 @@ class S3Repository(YumRepository):
         self.secret_key = repo.secret_key
         self.enablegroups = repo.enablegroups
 
+        self.retries = repo.retries
+        self.backoff = repo.backoff
+        self.delay = repo.delay
+
         for attr in OPTIONAL_ATTRIBUTES:
             if hasattr(repo, attr):
                 setattr(self, attr, getattr(repo, attr))
@@ -173,8 +183,12 @@ class S3Grabber(object):
         if isinstance(repo, basestring):
             self.baseurl = repo
             self.region = None
+            self.retries = 0
         else:
             self.region = repo.region
+            self.retries = repo.retries
+            self.backoff = DEFAULT_BACKOFF if repo.backoff is None else repo.backoff
+            self.delay = DEFAULT_DELAY if repo.delay is None else repo.delay
             if len(repo.baseurl) != 1:
                 msg = "%s: repository '%s' must" % (__file__, repo.id)
                 msg += 'have only one baseurl value'
@@ -280,26 +294,38 @@ class S3Grabber(object):
                 filename = filename[1:]
 
         response = None
-        try:
-            out = open(filename, 'w+')
-            response = urllib2.urlopen(request)
-            buff = response.read(8192)
-            while buff:
-                out.write(buff)
-                buff = response.read(8192)
-        except urllib2.HTTPError, e:
-            # Wrap exception as URLGrabError so that YumRepository catches it
-            from urlgrabber.grabber import URLGrabError
-            new_e = URLGrabError(14, '%s on %s' % (e, url))
-            new_e.code = e.code
-            new_e.exception = e
-            new_e.url = url
-            raise new_e
-        finally:
-            if response:
-                response.close()
-            out.close()
+        retries = self.retries
+        delay = self.delay
+        out = open(filename, 'w+')
+        while retries > 0:
+            try:
+                response = urllib2.urlopen(request)
+                buff = response.read(BUFFER_SIZE)
+                while buff:
+                    out.write(buff)
+                    buff = response.read(BUFFER_SIZE)
+            except urllib2.HTTPError, e:
+                if retries > 0:
+                    time.sleep(delay)
+                    delay *= self.backoff
+                else:
+                    # Wrap exception as URLGrabError so that YumRepository catches it
+                    from urlgrabber.grabber import URLGrabError
+                    msg = '%s on %s tried' % (e, url)
+                    if self.retries > 0:
+                        msg += ' tried %d time(s)' % (self.retries)
+                        new_e = URLGrabError(14, msg)
+                        new_e.code = e.code
+                        new_e.exception = e
+                        new_e.url = url
+                        raise new_e
+            finally:
+                retries -= 1
+                if response:
+                    response.close()
+                    break
 
+        out.close()
         return filename
 
     def urlopen(self, url, **kwargs):
