@@ -42,6 +42,7 @@ __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
 requires_api_version = '2.5'
 plugin_type = yum.plugins.TYPE_CORE
 CONDUIT = None
+UNSUPPORTED_ATTRIBUTES = ['mirrorlist', 'proxy']
 
 
 def config_hook(conduit):
@@ -137,6 +138,11 @@ class S3Repository(YumRepository):
             self.metadata_expire = repo.metadata_expire
         if hasattr(repo, 'skip_if_unavailable'):
             self.skip_if_unavailable = repo.skip_if_unavailable
+
+        for attr in UNSUPPORTED_ATTRIBUTES:
+            if getattr(repo, attr):
+                msg = "%s: Unsupported attribute: %s." % (__file__, attr)
+                raise yum.plugins.PluginYumExit(msg)
 
         self.iamrole = None
         self.grabber = None
