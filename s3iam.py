@@ -53,12 +53,12 @@ def config_hook(conduit):
     yum.config.RepoConf.secret_key = yum.config.Option()
     yum.config.RepoConf.delegated_role = yum.config.Option()
     yum.config.RepoConf.baseurl = yum.config.UrlListOption(
-        schemes=('http', 'https', 's3')
+        schemes=('http', 'https', 's3', 'ftp', 'file')
     )
-
 
 def parse_url(url):
     # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingBucket.html
+    url = url[0] if isinstance(url, list) else url
 
     # http[s]://<bucket>.s3.amazonaws.com
     m = re.match(r'(http|https|s3)://([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])[.]s3[.]amazonaws[.]com(.*)$', url)
@@ -91,9 +91,13 @@ def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
 
     repos = conduit.getRepos()
-
     for repo in repos.listEnabled():
-        if re.match(r'^s3://', repo.baseurl):
+        url = repo.baseurl
+        if(isinstance(url, list)):
+            if len(url) == 0:
+                continue
+            url = url[0]
+        if re.match(r'^s3://', url):
             repo.s3_enabled = 1
         if isinstance(repo, YumRepository) and repo.s3_enabled:
             replace_repo(repos, repo)
