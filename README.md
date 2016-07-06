@@ -28,6 +28,14 @@ There is a great blog post by Jeremy Carroll which explains in depth how to
 use this plugin:
 [S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
 
+## Limitations
+
+Currently the plugin does not support:
+- Proxy server configuration
+- Multi-valued baseurl or mirrorlist
+- AWS version 4 signatures needed by S3 in some regions (see v4_scheme
+  branch for work in progress)
+
 ## Testing
 
 Use `make test` to run some simple tests.
