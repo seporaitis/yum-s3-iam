@@ -1,4 +1,4 @@
-## 1.1.0 (2016-??-??)
+## 1.1.0 (2016-07-11)
 - #32: Add support for AWS v4 signature (@mbrossard)
 - #32: Add support for s3:// scheme (@asedge, @mbrossard)
 - #43: Add retries with exponential back-off (@bemehow, @mbrossard)
