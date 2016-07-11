@@ -37,7 +37,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
-* Wed Jul 06 2016 Mathias Brossard <mathias@brossard.org> 1.1.0-1
+* Wed Jul 11 2016 Mathias Brossard <mathias@brossard.org> 1.1.0-1
 - Add support for AWS v4 signature (@mbrossard)
 - Add support for s3:// scheme (@asedge, @mbrossard)
 - Add retries with exponential back-off (@bemehow, @mbrossard)
