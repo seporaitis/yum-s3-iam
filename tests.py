@@ -39,10 +39,13 @@ class MDCallback(object):
     def log(self, msg):
         pass
 
+    def errorlog(self, msg):
+        pass
+
 
 class YumTestCase(unittest.TestCase):
 
-    baseurl = 'http://test.s3.amazonaws.com/noarch/'
+    baseurl = 'https://test.s3.amazonaws.com/noarch/'
 
     def _createrepo(self):
         mdconf = createrepo.MetaDataConfig()
@@ -105,16 +108,16 @@ class YumTestCase(unittest.TestCase):
 
         # Throws RepoError exception
         yumbase = self._init_yum(
-            baseurl='http://broken.s3.amazonaws.com',
-            skip_if_unavailable=False,
+            baseurl='https://broken.s3.amazonaws.com',
+            retries=0, skip_if_unavailable=False,
         )
         self.assertRaises(yum.Errors.RepoError,
                           lambda: yumbase.doPackageLists().available)
 
         # No exception when skip_if_unavailable
         yumbase = self._init_yum(
-            baseurl='http://broken.s3.amazonaws.com',
-            skip_if_unavailable=True,
+            baseurl='https://broken.s3.amazonaws.com',
+            retries=0, skip_if_unavailable=True,
         )
         yumbase.doPackageLists().available
 
@@ -123,14 +126,41 @@ class S3GrabberTest(unittest.TestCase):
 
     def test_example_sign(self):
         """Test with example data"""
+        # See http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html
         grabber = s3iam.S3Grabber("http://johnsmith.s3.amazonaws.com/")
         grabber.access_key = "AKIAIOSFODNN7EXAMPLE"
         grabber.secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-        grabber.token = 'None'
-        request = grabber._request("photos/puppy.jpg")
-        signature = grabber.sign(request, timeval=(2013, 1, 1, 0, 0, 0, 0, 0, 0))
-        self.assertEqual(signature.strip(), "g28R8sx2k7a5lW/9jMfCNfnMHjc=")
+        grabber.token = None
+        request = grabber._request("/photos/puppy.jpg", timeval=(2007, 3, 27, 19, 36, 42, 1, 0, 0))
+        self.assertEqual(request.get_header('Authorization').strip(),
+                         "AWS " + grabber.access_key + ":bWq2s1WEIj+Ydj0vQ697zp+IXMU=")
 
+class UrlTests(unittest.TestCase):
+    def test_urls(self):
+        (b, r, p) = s3iam.parse_url('https://foo.s3.amazonaws.com/path')
+        self.assertEqual(b, 'foo')
+        self.assertEqual(r, None)
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://www.foo.com.s3.amazonaws.com/path')
+        self.assertEqual(b, 'www.foo.com')
+        self.assertEqual(r, None)
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://foo.s3-us-west-2.amazonaws.com/path')
+        self.assertEqual(b, 'foo')
+        self.assertEqual(r, 'us-west-2')
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://s3.amazonaws.com/bar/path')
+        self.assertEqual(b, 'bar')
+        self.assertEqual(r, 'us-east-1')
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://s3-us-west-1.amazonaws.com/bar/path')
+        self.assertEqual(b, 'bar')
+        self.assertEqual(r, 'us-west-1')
+        self.assertEqual(p, '/path')
 
 if __name__ == '__main__':
     unittest.main()

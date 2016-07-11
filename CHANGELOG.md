@@ -1,5 +1,10 @@
+## 1.1.0 (2016-07-11)
+- #32: Add support for AWS v4 signature (@mbrossard)
+- #32: Add support for s3:// scheme (@asedge, @mbrossard)
+- #43: Add retries with exponential back-off (@bemehow, @mbrossard)
+
 ## 1.0.3 (2016-07-05)
-- Add support for delegated roles (@ToneD)
+- #44: Add support for delegated roles (@ToneD)
 
 ## 1.0.2 (2015-11-03)
-- Fix signature issue with python 2.7 (@mbrossard)
+- #34: Fix signature issue with python 2.7 (@mbrossard)

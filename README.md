@@ -33,8 +33,6 @@ use this plugin:
 Currently the plugin does not support:
 - Proxy server configuration
 - Multi-valued baseurl or mirrorlist
-- AWS version 4 signatures needed by S3 in some regions (see v4_scheme
-  branch for work in progress)
 
 ## Testing
 
