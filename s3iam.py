@@ -90,6 +90,16 @@ def parse_url(url):
     return (None, None, None)
 
 
+def iam_is_accessible(timeout=1):
+    """Test if IAM is accessible"""
+    request = urllib2.Request("http://169.254.169.254/latest/meta-data/iam/security-credentials/")
+    try:
+        urllib2.urlopen(request, timeout=timeout).close()
+    except urllib2.URLError as e:
+        return False
+    return True
+
+
 def replace_repo(repos, repo):
     repos.delete(repo.id)
     repos.add(S3Repository(repo.id, repo))
@@ -98,17 +108,18 @@ def replace_repo(repos, repo):
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
 
-    repos = conduit.getRepos()
-    for repo in repos.listEnabled():
-        url = repo.baseurl
-        if(isinstance(url, list)):
-            if len(url) == 0:
-                continue
-            url = url[0]
-        if re.match(r'^s3://', url):
-            repo.s3_enabled = 1
-        if isinstance(repo, YumRepository) and repo.s3_enabled:
-            replace_repo(repos, repo)
+    if iam_is_accessible():
+        repos = conduit.getRepos()
+        for repo in repos.listEnabled():
+            url = repo.baseurl
+            if(isinstance(url, list)):
+                if len(url) == 0:
+                    continue
+                url = url[0]
+            if re.match(r'^s3://', url):
+                repo.s3_enabled = 1
+            if isinstance(repo, YumRepository) and repo.s3_enabled:
+                replace_repo(repos, repo)
 
 
 class S3Repository(YumRepository):
