@@ -28,6 +28,19 @@ There is a great blog post by Jeremy Carroll which explains in depth how to
 use this plugin:
 [S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
 
+## Notes on S3 buckets and URLs
+
+There are 2 types of S3 URLs:
+- virtual-hosted–style URL:
+  - `https://<bucket>.s3.amazonaws.com/<path>` if region is US East (us-east-1)
+  - `https://<bucket>.s3-<aws-region>.amazonaws.com/<path>` in other regions
+- path-style URLs:
+  - `https://s3.amazonaws.com/<bucket>/<path>` if region is US East (us-east-1)
+  - `https://s3-<aws-region>.amazonaws.com/<bucket>/<path>` in other regions
+
+When using HTTP/S and a bucket name containing a dot (`.`) you need to
+use the path-style URL syntax.
+
 ## Limitations
 
 Currently the plugin does not support:
