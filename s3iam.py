@@ -136,6 +136,7 @@ class S3Repository(YumRepository):
         self.key_id = repo.key_id
         self.secret_key = repo.secret_key
         self.enablegroups = repo.enablegroups
+        self.delegated_role = repo.delegated_role
 
         self.retries = repo.retries
         self.backoff = repo.backoff
