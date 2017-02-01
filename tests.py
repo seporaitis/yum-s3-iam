@@ -162,5 +162,10 @@ class UrlTests(unittest.TestCase):
         self.assertEqual(r, 'us-west-1')
         self.assertEqual(p, '/path')
 
+        (b, r, p) = s3iam.parse_url('https://s3.cn-north-1.amazonaws.com.cn/bar/path')
+        self.assertEqual(b, 'bar')
+        self.assertEqual(r, 'cn-north-1')
+        self.assertEqual(p, '/path')
+
 if __name__ == '__main__':
     unittest.main()
