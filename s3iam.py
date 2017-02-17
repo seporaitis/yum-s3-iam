@@ -33,7 +33,7 @@ __author__ = "Julius Seporaitis"
 __email__ = "julius@seporaitis.net"
 __copyright__ = "Copyright 2012, Julius Seporaitis"
 __license__ = "Apache 2.0"
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
@@ -82,6 +82,11 @@ def parse_url(url):
     if m:
         return (m.group(2), 'us-east-1', m.group(3))
 
+    # http[s]://s3.cn-north-1.amazonaws.com.cn/<bucket>
+    m = re.match(r'(http|https|s3)://s3[.]cn-north-1[.]amazonaws[.]com[.]cn/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
+    if m:
+        return (m.group(2), 'cn-north-1', m.group(3))
+
     # http[s]://s3-<region>.amazonaws.com/<bucket>
     m = re.match(r'(http|https|s3)://s3-([a-z0-9-]+)[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
     if m:
@@ -127,6 +132,9 @@ class S3Repository(YumRepository):
             self.baseurl = "https://s3-%s.amazonaws.com/%s%s" % (region, bucket, path)
         else:
             self.baseurl = "https://%s.s3.amazonaws.com%s" % (bucket, path)
+
+        if 'cn-north-1' in region:
+            self.baseurl = "https://s3.cn-north-1.amazonaws.com.cn/%s%s" % (bucket, path)
 
         self.name = repo.name
         self.region = repo.region if repo.region else region

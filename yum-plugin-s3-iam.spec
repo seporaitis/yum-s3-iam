@@ -37,6 +37,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Thu Feb 16 2017 Mathias Brossard <mathias@brossard.org> 1.1.1-1
+- Add support for cn-north-1 region
+
 * Wed Jul 11 2016 Mathias Brossard <mathias@brossard.org> 1.1.0-1
 - Add support for AWS v4 signature (@mbrossard)
 - Add support for s3:// scheme (@asedge, @mbrossard)

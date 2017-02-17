@@ -1,3 +1,6 @@
+## 1.1.1 (2016-02-17)
+- #51: Add support for cn-north-1 region
+
 ## 1.1.0 (2016-07-11)
 - #32: Add support for AWS v4 signature (@mbrossard)
 - #32: Add support for s3:// scheme (@asedge, @mbrossard)
