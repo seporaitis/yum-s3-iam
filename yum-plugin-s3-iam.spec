@@ -37,6 +37,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Tue Feb 21 2017 Mathias Brossard <mathias@brossard.org> 1.1.2-1
+- Fix for no-region regression introduced by cn-north-1 region support
+
 * Thu Feb 16 2017 Mathias Brossard <mathias@brossard.org> 1.1.1-1
 - Add support for cn-north-1 region
 

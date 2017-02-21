@@ -1,3 +1,6 @@
+## 1.1.2 (2017-02-21)
+- #53: Fix for no-region regression introduced by #51
+
 ## 1.1.1 (2017-02-16)
 - #51: Add support for cn-north-1 region
 

@@ -33,7 +33,7 @@ __author__ = "Julius Seporaitis"
 __email__ = "julius@seporaitis.net"
 __copyright__ = "Copyright 2012, Julius Seporaitis"
 __license__ = "Apache 2.0"
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
@@ -130,11 +130,10 @@ class S3Repository(YumRepository):
 
         if region:
             self.baseurl = "https://s3-%s.amazonaws.com/%s%s" % (region, bucket, path)
+            if 'cn-north-1' in region:
+                self.baseurl = "https://s3.cn-north-1.amazonaws.com.cn/%s%s" % (bucket, path)
         else:
             self.baseurl = "https://%s.s3.amazonaws.com%s" % (bucket, path)
-
-        if 'cn-north-1' in region:
-            self.baseurl = "https://s3.cn-north-1.amazonaws.com.cn/%s%s" % (bucket, path)
 
         self.name = repo.name
         self.region = repo.region if repo.region else region
