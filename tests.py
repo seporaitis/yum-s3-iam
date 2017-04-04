@@ -154,7 +154,7 @@ class UrlTests(unittest.TestCase):
 
         (b, r, p) = s3iam.parse_url('https://s3.amazonaws.com/bar/path')
         self.assertEqual(b, 'bar')
-        self.assertEqual(r, 'us-east-1')
+        self.assertEqual(r, None)
         self.assertEqual(p, '/path')
 
         (b, r, p) = s3iam.parse_url('https://s3-us-west-1.amazonaws.com/bar/path')
