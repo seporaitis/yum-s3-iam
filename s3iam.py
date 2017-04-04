@@ -80,7 +80,7 @@ def parse_url(url):
     # http[s]://s3.amazonaws.com/<bucket>
     m = re.match(r'(http|https|s3)://s3[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
     if m:
-        return (m.group(2), 'us-east-1', m.group(3))
+        return (m.group(2), None, m.group(3))
 
     # http[s]://s3.cn-north-1.amazonaws.com.cn/<bucket>
     m = re.match(r'(http|https|s3)://s3[.]cn-north-1[.]amazonaws[.]com[.]cn/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
