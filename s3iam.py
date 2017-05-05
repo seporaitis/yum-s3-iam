@@ -143,6 +143,7 @@ class S3Repository(YumRepository):
         self.key_id = repo.key_id
         self.secret_key = repo.secret_key
         self.enablegroups = repo.enablegroups
+        self.delegated_role = repo.delegated_role
 
         self.retries = repo.retries
         self.backoff = repo.backoff
@@ -172,7 +173,6 @@ class S3Repository(YumRepository):
             if self.key_id and self.secret_key:
                 self.grabber.set_credentials(self.key_id, self.secret_key)
             elif self.delegated_role:
-                self.grabber.get_instance_region()
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
                 self.grabber.get_role()
@@ -259,7 +259,7 @@ class S3Grabber(object):
         """
         import boto.sts
 
-        sts_conn = boto.sts.connect_to_region(self.region)
+        sts_conn = boto.sts.connect_to_region(self.get_instance_region())
         assumed_role = sts_conn.assume_role(delegated_role, 'yum')
 
         self.access_key = assumed_role.credentials.access_key
@@ -281,7 +281,7 @@ class S3Grabber(object):
         finally:
             if response:
                 response.close()
-        self.region = data[:-1]
+        return data[:-1]
 
     def _request(self, path, timeval=None):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
