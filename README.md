@@ -41,6 +41,18 @@ There are 2 types of S3 URLs:
 When using HTTP/S and a bucket name containing a dot (`.`) you need to
 use the path-style URL syntax.
 
+## Use outside of EC2
+
+Some use-cases (Continuous Integration, Docker) involve S3-hosted yum
+repositories being accessed from outside EC2. For those cases two
+options are available:
+- Use AWS API keys in AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (and
+  optionally AWS_SESSION_TOKEN) environment variables. Those will be
+  used as a fallback if IAM role credentials can not be accessed.
+- Defining the environment DISABLE_YUM_S3_IAM to 1 will disable the
+  use of the yum-s3-iam plugin. This should be used with S3 bucket IP
+  white-listing.
+
 ## Limitations
 
 Currently the plugin does not support:

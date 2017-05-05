@@ -37,11 +37,17 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Fri May 05 2017 Mathias Brossard <mathias@brossard.org> 1.2.0-1
+- Improvements for running outside of EC2 (@mbrossard)
+- Fix for cross-region STS authentication (@jonnangle)
+- Fix for regression on 'us-east-1' (@mestudd, @mbrossard)
+
 * Tue Feb 21 2017 Mathias Brossard <mathias@brossard.org> 1.1.2-1
 - Fix for no-region regression introduced by cn-north-1 region support
+  (@mbrossard)
 
 * Thu Feb 16 2017 Mathias Brossard <mathias@brossard.org> 1.1.1-1
-- Add support for cn-north-1 region
+- Add support for cn-north-1 region (@mbrossard)
 
 * Wed Jul 11 2016 Mathias Brossard <mathias@brossard.org> 1.1.0-1
 - Add support for AWS v4 signature (@mbrossard)

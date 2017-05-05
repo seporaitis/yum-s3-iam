@@ -34,7 +34,7 @@ __author__ = "Julius Seporaitis"
 __email__ = "julius@seporaitis.net"
 __copyright__ = "Copyright 2012, Julius Seporaitis"
 __license__ = "Apache 2.0"
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
