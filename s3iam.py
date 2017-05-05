@@ -144,7 +144,7 @@ class S3Repository(YumRepository):
         self.basecachedir = repo.basecachedir
         self.gpgcheck = repo.gpgcheck
         self.gpgkey = repo.gpgkey
-        self.key_id = repo.key_id
+        self.access_id = repo.key_id
         self.secret_key = repo.secret_key
         self.enablegroups = repo.enablegroups
         self.delegated_role = repo.delegated_role
@@ -174,8 +174,8 @@ class S3Repository(YumRepository):
     def grab(self):
         if not self.grabber:
             self.grabber = S3Grabber(self)
-            if self.key_id and self.secret_key:
-                self.grabber.set_credentials(self.key_id, self.secret_key)
+            if self.access_id and self.secret_key:
+                self.grabber.set_credentials(self.access_id, self.secret_key)
             elif self.delegated_role:
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
@@ -196,6 +196,7 @@ class S3Grabber(object):
             self.region = None
             self.retries = 0
         else:
+            self.id = repo.id
             self.region = repo.region
             self.retries = repo.retries
             self.backoff = DEFAULT_BACKOFF if repo.backoff is None else repo.backoff
@@ -209,6 +210,9 @@ class S3Grabber(object):
         # Ensure urljoin doesn't ignore base path:
         if not self.baseurl.endswith('/'):
             self.baseurl += '/'
+        self.access_key = None
+        self.secret_key = None
+        self.token = None
 
     def get_role(self):
         """Read IAM role from AWS metadata store."""
@@ -242,13 +246,29 @@ class S3Grabber(object):
         try:
             response = urllib2.urlopen(request)
             data = json.loads(response.read())
+            self.access_key = data['AccessKeyId']
+            self.secret_key = data['SecretAccessKey']
+            self.token = data['Token']
         finally:
             if response:
                 response.close()
 
-        self.access_key = data['AccessKeyId']
-        self.secret_key = data['SecretAccessKey']
-        self.token = data['Token']
+        if self.access_key is None and self.secret_key is None:
+            if "AWS_ACCESS_KEY_ID" in os.environ:
+                self.access_key = os.environ['AWS_ACCESS_KEY_ID']
+            if "AWS_SECRET_ACCESS_KEY" in os.environ:
+                self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+            if "AWS_SESSION_TOKEN" in os.environ:
+                self.token = os.environ['AWS_SESSION_TOKEN']
+
+        if self.access_key is None and self.secret_key is None:
+            if hasattr(self, 'name'):
+                msg = "Could not access AWS credentials, skipping repository '%s'" % (self.name)
+            else:
+                msg = "Could not access AWS credentials"
+            print msg
+            from urlgrabber.grabber import URLGrabError
+            raise URLGrabError(7, msg)
 
     def set_credentials(self, access_key, secret_key):
         self.access_key = access_key
