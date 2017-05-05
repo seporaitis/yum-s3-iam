@@ -20,6 +20,7 @@ import time
 import hashlib
 import hmac
 import json
+import os
 import re
 
 import yum
@@ -102,6 +103,9 @@ def replace_repo(repos, repo):
 
 def prereposetup_hook(conduit):
     """Plugin initialization hook. Setup the S3 repositories."""
+
+    if 'DISABLE_YUM_S3_IAM' in os.environ and os.environ['DISABLE_YUM_S3_IAM']:
+        return
 
     repos = conduit.getRepos()
     for repo in repos.listEnabled():
