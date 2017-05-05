@@ -222,10 +222,12 @@ class S3Grabber(object):
                 "/latest/meta-data/iam/security-credentials/"
             ))
 
-        response = None
         try:
             response = urllib2.urlopen(request)
             self.iamrole = (response.read())
+        except Exception:
+            response = None
+            self.iamrole = ""
         finally:
             if response:
                 response.close()
@@ -242,13 +244,14 @@ class S3Grabber(object):
                     "latest/meta-data/iam/security-credentials/",
                 ), self.iamrole))
 
-        response = None
         try:
             response = urllib2.urlopen(request)
             data = json.loads(response.read())
             self.access_key = data['AccessKeyId']
             self.secret_key = data['SecretAccessKey']
             self.token = data['Token']
+        except Exception:
+            response = None
         finally:
             if response:
                 response.close()
