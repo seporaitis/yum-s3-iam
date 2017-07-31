@@ -25,6 +25,7 @@ import yum
 import createrepo
 sys.path.append('.')
 import s3iam
+from mock import patch, ANY, MagicMock
 
 
 PACKAGE_NAME = 'yum-plugin-s3-iam'
@@ -166,6 +167,62 @@ class UrlTests(unittest.TestCase):
         self.assertEqual(b, 'bar')
         self.assertEqual(r, 'cn-north-1')
         self.assertEqual(p, '/path')
+
+
+class S3RepositoryTest(unittest.TestCase):
+
+    def setUp(self):
+        self.orig_http_proxy = os.environ['http_proxy'] if 'http_proxy' in os.environ else None
+        os.environ['https_proxy'] = 'http://https_proxy_host:https_proxy_port'
+        self.orig_https_proxy = os.environ['https_proxy'] if 'https_proxy' in os.environ else None
+        os.environ['http_proxy'] = 'http://http_proxy_host:http_proxy_port'
+        self.repo = MagicMock(
+            baseurl = 'https://s3.cn-north-1.amazonaws.com.cn/bar/path',
+            name = 'test repo',
+            region = 'cn-north-1',
+            basecachedir = '',
+            gpgcheck = False,
+            gpgkey = None,
+            key_id = None,
+            secret_key = None,
+            enablegroups = False,
+            delegated_role = None,
+            retries = 1,
+            backoff = None,
+            delay = 0,
+            mirrorlist = None,
+            proxy = None
+            )
+
+    def tearDown(self):
+        if self.orig_https_proxy is not None:
+            os.environ['https_proxy'] = self.orig_https_proxy
+        if self.orig_http_proxy is not None:
+            os.environ['http_proxy'] = self.orig_http_proxy
+
+    @patch('s3iam.urllib2')
+    def test_config_proxy_from_env(self, urllib2_mock):
+        s3_repo = s3iam.S3Repository('repo-id', self.repo)
+        urllib2_mock.ProxyHandler.assert_called_once_with({
+            'http':'http://http_proxy_host:http_proxy_port',
+            'https':'http://https_proxy_host:https_proxy_port'
+            })
+        urllib2_mock.build_opener.assert_called_once_with(urllib2_mock.ProxyHandler.return_value)
+        urllib2_mock.install_opener.assert_called_once_with(ANY)
+
+    @patch('s3iam.urllib2')
+    def test_config_proxy_from_yum_conf(self, urllib2_mock):
+        del(os.environ['http_proxy'])
+        del(os.environ['https_proxy'])
+        self.repo.proxy = 'http://same_proxy_for_all:port'
+        s3_repo = s3iam.S3Repository('repo-id', self.repo)
+        urllib2_mock.ProxyHandler.assert_called_once_with({
+            'http':'http://same_proxy_for_all:port',
+            'https':'http://same_proxy_for_all:port'
+            })
+        urllib2_mock.build_opener.assert_called_once_with(urllib2_mock.ProxyHandler.return_value)
+        urllib2_mock.install_opener.assert_called_once_with(ANY)
+
 
 if __name__ == '__main__':
     unittest.main()

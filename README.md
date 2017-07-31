@@ -63,6 +63,10 @@ Currently the plugin does not support:
 
 Use `make test` to run some simple tests.
 
+### Testing with docker compose:
+docker-compose -f docker-compose.tests.yml run yum-s3-iam test
+docker-compose -f docker-compose.tests.yml down --volumes --rmi all
+
 ## License
 
 Apache 2.0 license. See LICENSE.
