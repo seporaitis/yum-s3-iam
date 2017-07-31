@@ -171,24 +171,6 @@ class UrlTests(unittest.TestCase):
 
 class S3RepositoryTest(unittest.TestCase):
 
-#    class FakeRepo:
-#        def __init__(self):
-#            self.baseurl = 'https://s3.cn-north-1.amazonaws.com.cn/bar/path'
-#            self.name = 'test repo'
-#            self.region = 'cn-north-1'
-#            self.basecachedir = ''
-#            self.gpgcheck = False
-#            self.gpgkey = None
-#            self.key_id = None
-#            self.secret_key = None
-#            self.enablegroups = False
-#            self.delegated_role = None
-#            self.retries = 1
-#            self.backoff = None
-#            self.delay = 0
-#            self.mirrorlist = None
-#            self.proxy = None
-
     def setUp(self):
         self.orig_http_proxy = os.environ['http_proxy'] if 'http_proxy' in os.environ else None
         os.environ['https_proxy'] = 'http://https_proxy_host:https_proxy_port'
