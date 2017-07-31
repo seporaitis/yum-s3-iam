@@ -1,5 +1,5 @@
 NAME    = yum-plugin-s3-iam
-VERSION = 1.2.0
+VERSION = 1.2.1
 RELEASE = 1
 ARCH    = noarch
 

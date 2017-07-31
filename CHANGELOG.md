@@ -1,3 +1,7 @@
+## 1.2.1 (2017-07-31)
+- #3: Add support for proxy in configurations and environment
+  variables (@AgarFu)
+
 ## 1.2.0 (2017-05-05)
 - #48 and #49: Improvements for running outside of EC2 (@mbrossard):
   - Set DISABLE_YUM_S3_IAM environment variable to disable IAM

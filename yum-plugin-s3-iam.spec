@@ -37,6 +37,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Fri May 05 2017 Mathias Brossard <mathias@brossard.org> 1.2.1-1
+- Add support for proxy (@AgarFu)
+
 * Fri May 05 2017 Mathias Brossard <mathias@brossard.org> 1.2.0-1
 - Improvements for running outside of EC2 (@mbrossard)
 - Fix for cross-region STS authentication (@jonnangle)
