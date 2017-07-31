@@ -1,0 +1,11 @@
+version: '2'
+services:
+  yum-s3-iam:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    image: s3-iam-plugin
+    volumes:
+        - .:/app/
+    working_dir: /app/
+    network_mode: 'bridge'

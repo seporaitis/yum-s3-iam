@@ -34,7 +34,7 @@ __author__ = "Julius Seporaitis"
 __email__ = "julius@seporaitis.net"
 __copyright__ = "Copyright 2012, Julius Seporaitis"
 __license__ = "Apache 2.0"
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
@@ -48,7 +48,7 @@ DEFAULT_BACKOFF = 2
 BUFFER_SIZE = 1024 * 1024
 OPTIONAL_ATTRIBUTES = ['priority', 'base_persistdir', 'metadata_expire',
                        'skip_if_unavailable', 'keepcache', 'priority']
-UNSUPPORTED_ATTRIBUTES = ['mirrorlist', 'proxy']
+UNSUPPORTED_ATTRIBUTES = ['mirrorlist']
 
 
 def config_hook(conduit):
@@ -161,6 +161,18 @@ class S3Repository(YumRepository):
             if getattr(repo, attr):
                 msg = "%s: Unsupported attribute: %s." % (__file__, attr)
                 raise yum.plugins.PluginYumExit(msg)
+
+        proxy_config = {}
+        if 'https_proxy' in os.environ:
+            proxy_config['https'] = os.environ['https_proxy']
+        if 'http_proxy' in os.environ:
+            proxy_config['http'] = os.environ['http_proxy']
+        if repo.proxy:
+            proxy_config['https'] = proxy_config['http'] = repo.proxy
+        if proxy_config:
+            proxy = urllib2.ProxyHandler(proxy_config)
+            opener = urllib2.build_opener(proxy)
+            urllib2.install_opener(opener)
 
         self.iamrole = None
         self.grabber = None
