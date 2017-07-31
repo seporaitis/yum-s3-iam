@@ -1,5 +1,4 @@
 FROM centos:latest
-MAINTAINER GPP DevOps <SBG-PDGPP-DevOps@intuit.com>
 
 RUN mkdir -p /app;\
     yum install -y createrepo make rpm-build epel-release;\
