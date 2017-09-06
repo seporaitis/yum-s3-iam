@@ -34,7 +34,7 @@ __author__ = "Julius Seporaitis"
 __email__ = "julius@seporaitis.net"
 __copyright__ = "Copyright 2012, Julius Seporaitis"
 __license__ = "Apache 2.0"
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 
 __all__ = ['requires_api_version', 'plugin_type', 'CONDUIT',
@@ -167,7 +167,7 @@ class S3Repository(YumRepository):
             proxy_config['https'] = os.environ['https_proxy']
         if 'http_proxy' in os.environ:
             proxy_config['http'] = os.environ['http_proxy']
-        if repo.proxy:
+        if repo.proxy and repo.proxy != '__none__':
             proxy_config['https'] = proxy_config['http'] = repo.proxy
         if proxy_config:
             proxy = urllib2.ProxyHandler(proxy_config)

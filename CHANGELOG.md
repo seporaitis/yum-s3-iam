@@ -1,3 +1,6 @@
+## 1.2.2 (2017-09-06)
+- #59: Handle special value '__none__' for proxy (@andlam)
+
 ## 1.2.1 (2017-07-31)
 - #3: Add support for proxy in configurations and environment
   variables (@AgarFu)
