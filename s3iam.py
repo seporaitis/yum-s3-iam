@@ -315,7 +315,7 @@ class S3Grabber(object):
 
         response = None
         try:
-            response = urllib2.urlopen(request)
+            response = urllib2.urlopen(request, timeout=2)
             data = response.read()
         finally:
             if response:
@@ -345,7 +345,7 @@ class S3Grabber(object):
         out = open(filename, 'w+')
         while retries > 0:
             try:
-                response = urllib2.urlopen(request)
+                response = urllib2.urlopen(request, timeout=2)
                 buff = response.read(BUFFER_SIZE)
                 while buff:
                     out.write(buff)
