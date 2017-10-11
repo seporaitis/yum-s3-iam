@@ -233,7 +233,8 @@ class S3Grabber(object):
                 "http://169.254.169.254",
                 "/latest/meta-data/iam/security-credentials/"
             ))
-
+        
+        response = None
         try:
             response = urllib2.urlopen(request)
             self.iamrole = (response.read())
