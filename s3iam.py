@@ -234,9 +234,8 @@ class S3Grabber(object):
                 "/latest/meta-data/iam/security-credentials/"
             ))
         
-        response = None
         try:
-            response = urllib2.urlopen(request)
+            response = urllib2.urlopen(request, timeout=2)
             self.iamrole = (response.read())
         except Exception:
             response = None
