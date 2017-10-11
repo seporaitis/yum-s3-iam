@@ -235,7 +235,7 @@ class S3Grabber(object):
             ))
         
         try:
-            response = urllib2.urlopen(request, timeout=2)
+            response = urllib2.urlopen(request, timeout=1)
             self.iamrole = (response.read())
         except Exception:
             response = None
@@ -257,7 +257,7 @@ class S3Grabber(object):
                 ), self.iamrole))
 
         try:
-            response = urllib2.urlopen(request, timeout=2)
+            response = urllib2.urlopen(request, timeout=1)
             data = json.loads(response.read())
             self.access_key = data['AccessKeyId']
             self.secret_key = data['SecretAccessKey']
@@ -315,7 +315,7 @@ class S3Grabber(object):
 
         response = None
         try:
-            response = urllib2.urlopen(request, timeout=2)
+            response = urllib2.urlopen(request, timeout=1)
             data = response.read()
         finally:
             if response:
@@ -345,7 +345,7 @@ class S3Grabber(object):
         out = open(filename, 'w+')
         while retries > 0:
             try:
-                response = urllib2.urlopen(request, timeout=2)
+                response = urllib2.urlopen(request, timeout=1)
                 buff = response.read(BUFFER_SIZE)
                 while buff:
                     out.write(buff)
