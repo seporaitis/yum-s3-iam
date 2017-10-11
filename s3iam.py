@@ -257,7 +257,7 @@ class S3Grabber(object):
                 ), self.iamrole))
 
         try:
-            response = urllib2.urlopen(request)
+            response = urllib2.urlopen(request, timeout=2)
             data = json.loads(response.read())
             self.access_key = data['AccessKeyId']
             self.secret_key = data['SecretAccessKey']
