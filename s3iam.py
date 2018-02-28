@@ -45,6 +45,7 @@ plugin_type = yum.plugins.TYPE_CORE
 CONDUIT = None
 DEFAULT_DELAY = 3
 DEFAULT_BACKOFF = 2
+DEFAULT_REQUEST_TIMEOUT = 4
 BUFFER_SIZE = 1024 * 1024
 OPTIONAL_ATTRIBUTES = ['priority', 'base_persistdir', 'metadata_expire',
                        'skip_if_unavailable', 'keepcache', 'priority']
@@ -235,7 +236,7 @@ class S3Grabber(object):
             ))
 
         try:
-            response = urllib2.urlopen(request)
+            response = urllib2.urlopen(request, timeout = DEFAULT_REQUEST_TIMEOUT)
             self.iamrole = (response.read())
         except Exception:
             response = None
@@ -249,32 +250,33 @@ class S3Grabber(object):
         Note: This method should be explicitly called after constructing new
               object, as in 'explicit is better than implicit'.
         """
-        request = urllib2.Request(
-            urlparse.urljoin(
-                urlparse.urljoin(
-                    "http://169.254.169.254/",
-                    "latest/meta-data/iam/security-credentials/",
-                ), self.iamrole))
 
-        try:
-            response = urllib2.urlopen(request)
-            data = json.loads(response.read())
-            self.access_key = data['AccessKeyId']
-            self.secret_key = data['SecretAccessKey']
-            self.token = data['Token']
-        except Exception:
-            response = None
-        finally:
-            if response:
-                response.close()
+        if "AWS_ACCESS_KEY_ID" in os.environ:
+            self.access_key = os.environ['AWS_ACCESS_KEY_ID']
+        if "AWS_SECRET_ACCESS_KEY" in os.environ:
+            self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+        if "AWS_SESSION_TOKEN" in os.environ:
+            self.token = os.environ['AWS_SESSION_TOKEN']
 
         if self.access_key is None and self.secret_key is None:
-            if "AWS_ACCESS_KEY_ID" in os.environ:
-                self.access_key = os.environ['AWS_ACCESS_KEY_ID']
-            if "AWS_SECRET_ACCESS_KEY" in os.environ:
-                self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-            if "AWS_SESSION_TOKEN" in os.environ:
-                self.token = os.environ['AWS_SESSION_TOKEN']
+            request = urllib2.Request(
+                urlparse.urljoin(
+                    urlparse.urljoin(
+                        "http://169.254.169.254/",
+                        "latest/meta-data/iam/security-credentials/",
+                    ), self.iamrole))
+
+            try:
+                response = urllib2.urlopen(request, timeout = DEFAULT_REQUEST_TIMEOUT)
+                data = json.loads(response.read())
+                self.access_key = data['AccessKeyId']
+                self.secret_key = data['SecretAccessKey']
+                self.token = data['Token']
+            except Exception:
+                response = None
+            finally:
+                if response:
+                    response.close()
 
         if self.access_key is None and self.secret_key is None:
             if hasattr(self, 'name'):
@@ -315,7 +317,7 @@ class S3Grabber(object):
 
         response = None
         try:
-            response = urllib2.urlopen(request)
+            response = urllib2.urlopen(request, timeout = DEFAULT_REQUEST_TIMEOUT)
             data = response.read()
         finally:
             if response:
