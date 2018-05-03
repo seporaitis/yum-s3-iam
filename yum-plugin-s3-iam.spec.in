@@ -1,6 +1,7 @@
-Name:      %{name}
-Version:   %{version}
-Release:   %{release}
+# Values normally populated from Makefile
+Name:      @@@NAME@@@
+Version:   @@@VERSION@@@
+Release:   @@@RELEASE@@@
 Summary:   Yum package manager plugin for private S3 repositories.
 
 Group:     Application/SystemTools

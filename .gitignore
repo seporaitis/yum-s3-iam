@@ -1,8 +1,9 @@
 *.cfg
 *.pyc
 *.pyo
+*.spec
 *.tar.gz
 */
-*~
 *\#*
+*~
 test_values.py
