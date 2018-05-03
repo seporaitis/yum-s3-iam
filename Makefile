@@ -15,24 +15,43 @@ RPMBUILD_ARGS := \
 all:
 	@echo "Usage: make rpm"
 
+
+tarball: $(NAME)-$(VERSION).tar.gz
+$(NAME)-$(VERSION).tar.gz: 
+	rsync -a $(PWD)/ $(NAME)-$(VERSION)/ \
+		--exclude-from=.gitignore
+	tar cpzvf $@ $(NAME)-$(VERSION)
+
+spec: $(NAME).spec
+.PHONY: $(NAME).spec
+$(NAME).spec:: Makefile $(NAME).spec.in
+	rm -f $@
+	cat $(NAME).spec.in | \
+		sed "s/@@@NAME@@@/$(NAME)/g" | \
+		sed "s/@@@VERSION@@@/$(VERSION)/g" | \
+		sed "s/@@@RELEASE@@@/$(RELEASE)/g" > $@
+
+.PHONY: srpm
+srpm::
+	@echo "Building SRPM with $(NAME).spec"
+	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
+		--define '_sourcedir $(PWD)' \
+		-bs $(NAME).spec --nodeps
+
+rpm:: build
+build:: srpm
+	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
+		--rebuild rpmbuild/SRPMS/*.src.rpm
+
 install:
 	install -m 0755 -d $(DESTDIR)/etc/yum/pluginconf.d/
 	install -m 0644 s3iam.conf $(DESTDIR)/etc/yum/pluginconf.d/
 	install -m 0755 -d $(DESTDIR)/usr/lib/yum-plugins/
 	install -m 0644 s3iam.py $(DESTDIR)/usr/lib/yum-plugins/
 
-rpm:
-	mkdir -p $(RPM_TOPDIR)/SOURCES
-	mkdir -p $(RPM_TOPDIR)/SPECS
-	mkdir -p $(RPM_TOPDIR)/BUILD
-	mkdir -p $(RPM_TOPDIR)/RPMS/$(ARCH)
-	mkdir -p $(RPM_TOPDIR)/SRPMS
-	rm -Rf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
-	cp -r . $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
-	tar czf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION).tar.gz -C $(RPM_TOPDIR)/SOURCES --exclude ".git" $(NAME)-$(VERSION)
-	rm -Rf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
-	cp $(NAME).spec $(RPM_TOPDIR)/SPECS/
-	rpmbuild $(RPMBUILD_ARGS) -ba --clean $(NAME).spec
+clean::
+	rm -rf */
+	rm -rf *.tar.gz
 
 test: rpm
 	python tests.py
