@@ -1,4 +1,9 @@
-## 1.2.2 (2017-09-06)
+## 1.2.2-2 (2018-05-03)
+- #65: Use .spec.in, not .spec file, to publish RPMs
+  - Add Makefile tools to build cleaner tarball, rpmbuild, and build with mock
+  - Update .gitignore to exclude subdirectories, generated .spec, and editor temp files
+
+## 1.2.2-1 (2017-09-06)
 - #59: Handle special value '__none__' for proxy (@andlam)
 
 ## 1.2.1 (2017-07-31)
