@@ -6,7 +6,6 @@ RELEASE = 2
 # Build for designated operating systems
 MOCKS += epel-6-i386
 MOCKS += epel-6-x86_64
-MOCKS += epel-7-i386
 MOCKS += epel-7-x86_64
 MOCKS += fedora-27-x86_64
 MOCKS += fedora-28-x86_64
@@ -32,16 +31,19 @@ $(NAME).spec:: Makefile $(NAME).spec.in
 		rm -f $@
 
 .PHONY: srpm
-srpm:: $(NAME).spec $(NAME)-$(VERSION).tar.gz
-	@echo "Building SRPM with $(NAME).spec"
-	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
-		--define '_sourcedir $(PWD)' \
-		-bs $(NAME).spec --nodeps
+srpm::
 
 build:: rpm
 rpm:: srpm
 	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
-		--rebuild rpmbuild/SRPMS/*.src.rpm
+		--rebuild $?
+
+.PHONY: srpm
+srpm:: $(NAME).spec
+	@echo "Building SRPM with $?"
+	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
+		--define '_sourcedir $(PWD)' \
+		-bs $(NAME).spec --nodeps
 
 .PHONY: install
 install:
@@ -52,13 +54,15 @@ install:
 
 mocks: $(MOCKS)
 .PHONY: $(MOCKS)
-$(MOCKS):: /usr/bin/mock 
+$(MOCKS):: /usr/bin/mock
 $(MOCKS):: srpm
-	mock -r $@ rpmbuild/SRPMS/*.src.rpm
+	mock -r $@ --resultdir=$(PWD)/$@ \
+		rpmbuild/SRPMS/$(NAME)-$(VERSION)-$(RELEASE).*.src.rpm
 
 clean::
 	rm -rf */
 	rm -rf *.tar.gz
+	rm -rf *.spec
 
 .PHONY: test
 test: rpm
