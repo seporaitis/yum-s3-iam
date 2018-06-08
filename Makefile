@@ -7,7 +7,6 @@ RELEASE = 2
 MOCKS += epel-6-i386
 MOCKS += epel-6-x86_64
 MOCKS += epel-7-x86_64
-MOCKS += fedora-27-x86_64
 MOCKS += fedora-28-x86_64
 
 .PHONY: help
