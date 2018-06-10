@@ -4,6 +4,7 @@ VERSION = 1.2.2
 RELEASE = 2
 
 # Build for designated operating systems
+#MOCKS += epel-5-i386
 MOCKS += epel-6-i386
 MOCKS += epel-6-x86_64
 MOCKS += epel-7-x86_64
@@ -30,15 +31,14 @@ $(NAME).spec:: Makefile $(NAME).spec.in
 		sed "s/@@@RELEASE@@@/$(RELEASE)/g" > $@ || \
 		rm -f $@
 
-.PHONY: srpm
-srpm::
-
 build:: rpm
 rpm:: srpm
 	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
-		--rebuild $?
+		--define '_sourcedir $(PWD)' \
+		-bb $(NAME).spec
 
 .PHONY: srpm
+srpm:: tarball
 srpm:: $(NAME).spec
 	@echo "Building SRPM with $?"
 	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
