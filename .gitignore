@@ -1,3 +1,6 @@
 test_values.py
 *.pyc
 *.pyo
+.DS_STORE
+build/
+.idea

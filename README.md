@@ -66,10 +66,43 @@ Use `make test` to run some simple tests.
 ### Testing with docker compose:
 
 ```
-docker-compose -f docker-compose.tests.yml run yum-s3-iam test
-docker-compose -f docker-compose.tests.yml down --volumes --rmi all
+docker-compose -f docker-compose.yml run yum-s3-iam test
+docker-compose -f docker-compose.yml run yum-s3-iam e2e_local
+
+docker-compose -f docker-compose.yml down --volumes --rmi all
 ```
 
+### Building rpm
+```
+make rpm VERSION=${VERSION} RELEASE=${RELEASE:-1}
+```
+### Building rpm with docker compose
+```
+docker-compose -f docker-compose.yml run yum-s3-iam rpm VERSION=${VERSION} RELEASE=${RELEASE:-1}
+```
+
+### Releasing new version
+Use `make release VERSION=${VERSION} RELEASE=${RELEASE:-1} REPO_URL=${REPO_URL:-s3://bv-nexus-public-artifacts/yum-repo/}
+` to release new version and upload to rpm repository.
+or via Docker-compose:
+```
+docker-compose -f docker-compose.yml run \ 
+    -e AWS_ACCESS_KEY_ID=$(aws --profile default configure get aws_access_key_id) \
+    -e AWS_SECRET_ACCESS_KEY=$(aws --profile default configure get aws_secret_access_key) \
+    yum-s3-iam release \
+        VERSION=${VERSION} \
+        RELEASE=${RELEASE:-1} \
+        REPO_URL=${REPO_URL:-s3://bv-nexus-public-artifacts/yum-repo/}
+```
+
+### Run e2e tests with new released version
+```
+make e2e_release
+```
+or via Docker-compose:
+```
+docker-compose -f docker-compose.yml run yum-s3-iam e2e_release
+```
 ## License
 
 Apache 2.0 license. See LICENSE.

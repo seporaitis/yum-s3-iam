@@ -15,12 +15,10 @@
 ; See the License for the specific language governing permissions and
 ; limitations under the License.
 ;
-[s3iam]
-name=S3 yum plugin test repository config
-baseurl=http://your-bucket-name.s3.amazonaws.com/
-failovermethod=priority
+[nexus-public-artifacts]
+name=nexus-public-artifacts
+baseurl=https://nexus-public-artifacts.s3.amazonaws.com/yum-repo
 enabled=1
-s3_enabled=1
 gpgcheck=0
 ; provide a delegated role arn to support a bucket in a different account
 ;delegated_role=arn:aws:iam::XXXXXXXXXXXX:role/some-role

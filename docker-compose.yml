@@ -1,9 +1,9 @@
-version: '2'
+version: '3'
 services:
   yum-s3-iam:
     build:
       context: .
-      dockerfile: Dockerfile.test
+      dockerfile: Dockerfile
     image: s3-iam-plugin
     volumes:
         - .:/app/
