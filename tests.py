@@ -153,6 +153,16 @@ class UrlTests(unittest.TestCase):
         self.assertEqual(r, 'us-west-2')
         self.assertEqual(p, '/path')
 
+        (b, r, p) = s3iam.parse_url('https://foo.s3.us-west-2.amazonaws.com/path')
+        self.assertEqual(b, 'foo')
+        self.assertEqual(r, 'us-west-2')
+        self.assertEqual(p, '/path')
+
+        (b, r, p) = s3iam.parse_url('https://foo.s3-website.us-west-2.amazonaws.com/path')
+        self.assertEqual(b, 'foo')
+        self.assertEqual(r, 'us-west-2')
+        self.assertEqual(p, '/path')
+
         (b, r, p) = s3iam.parse_url('https://s3.amazonaws.com/bar/path')
         self.assertEqual(b, 'bar')
         self.assertEqual(r, 'us-east-1')
@@ -168,6 +178,10 @@ class UrlTests(unittest.TestCase):
         self.assertEqual(r, 'cn-north-1')
         self.assertEqual(p, '/path')
 
+        (b, r, p) = s3iam.parse_url('https://s3.dualstack.us-west-1.amazonaws.com/chicken-little/path')
+        self.assertEqual(b, 'chicken-little')
+        self.assertEqual(r, 'us-west-1')
+        self.assertEqual(p, '/path')
 
 class S3RepositoryTest(unittest.TestCase):
 
