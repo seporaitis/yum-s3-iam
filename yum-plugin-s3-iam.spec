@@ -37,7 +37,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
-* Tue 28 Aug 2018 Piotr Kasperski <piotrkas@kainso.com>
+* Tue Aug 28 2018 Piotr Kasperski <piotrkas@kainso.com>
 - Added https://github.com/seporaitis/yum-s3-iam/pull/64
 
 * Fri May 05 2017 Mathias Brossard <mathias@brossard.org> 1.2.2-1
