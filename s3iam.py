@@ -353,6 +353,8 @@ class S3Grabber(object):
                     out.write(buff)
                     buff = response.read(BUFFER_SIZE)
             except urllib2.HTTPError, e:
+                if e.code == 404:
+                  retries = 0
                 if retries > 0:
                     time.sleep(delay)
                     delay *= self.backoff
@@ -463,3 +465,4 @@ class S3Grabber(object):
         request.add_header('x-amz-content-sha256', content_h)
         request.add_header('x-amz-date', amzdate)
         request.add_header('Authorization', auth)
+
