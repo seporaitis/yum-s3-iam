@@ -23,6 +23,7 @@ import json
 import os
 import re
 
+import boto3
 import yum
 import yum.config
 import yum.Errors
@@ -174,7 +175,6 @@ class S3Repository(YumRepository):
             opener = urllib2.build_opener(proxy)
             urllib2.install_opener(opener)
 
-        self.iamrole = None
         self.grabber = None
         self.enable()
 
@@ -191,10 +191,8 @@ class S3Repository(YumRepository):
             elif self.delegated_role:
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
-                self.grabber.get_role()
                 self.grabber.get_credentials()
         return self.grabber
-
 
 class S3Grabber(object):
 
@@ -222,59 +220,20 @@ class S3Grabber(object):
         # Ensure urljoin doesn't ignore base path:
         if not self.baseurl.endswith('/'):
             self.baseurl += '/'
+        self.session = boto3.Session()
         self.access_key = None
         self.secret_key = None
         self.token = None
-
-    def get_role(self):
-        """Read IAM role from AWS metadata store."""
-        request = urllib2.Request(
-            urlparse.urljoin(
-                "http://169.254.169.254",
-                "/latest/meta-data/iam/security-credentials/"
-            ))
-
-        try:
-            response = urllib2.urlopen(request)
-            self.iamrole = (response.read())
-        except Exception:
-            response = None
-            self.iamrole = ""
-        finally:
-            if response:
-                response.close()
 
     def get_credentials(self):
         """Read IAM credentials from AWS metadata store.
         Note: This method should be explicitly called after constructing new
               object, as in 'explicit is better than implicit'.
         """
-        request = urllib2.Request(
-            urlparse.urljoin(
-                urlparse.urljoin(
-                    "http://169.254.169.254/",
-                    "latest/meta-data/iam/security-credentials/",
-                ), self.iamrole))
-
-        try:
-            response = urllib2.urlopen(request)
-            data = json.loads(response.read())
-            self.access_key = data['AccessKeyId']
-            self.secret_key = data['SecretAccessKey']
-            self.token = data['Token']
-        except Exception:
-            response = None
-        finally:
-            if response:
-                response.close()
-
-        if self.access_key is None and self.secret_key is None:
-            if "AWS_ACCESS_KEY_ID" in os.environ:
-                self.access_key = os.environ['AWS_ACCESS_KEY_ID']
-            if "AWS_SECRET_ACCESS_KEY" in os.environ:
-                self.secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
-            if "AWS_SESSION_TOKEN" in os.environ:
-                self.token = os.environ['AWS_SESSION_TOKEN']
+        credentials = self.session.get_credentials()
+        self.access_key = credentials.access_key
+        self.secret_key = credentials.secret_key
+        self.token = credentials.token
 
         if self.access_key is None and self.secret_key is None:
             if hasattr(self, 'name'):
@@ -296,31 +255,16 @@ class S3Grabber(object):
         Note: This method should be explicitly called after constructing new
               object, as in 'explicit is better than implicit'.
         """
-        import boto.sts
+        sts_client = self.session.client('sts', region_name=self.get_instance_region())
+        assumed_role = sts_client.assume_role(RoleArn=delegated_role, RoleSessionName='yum')
 
-        sts_conn = boto.sts.connect_to_region(self.get_instance_region())
-        assumed_role = sts_conn.assume_role(delegated_role, 'yum')
-
-        self.access_key = assumed_role.credentials.access_key
-        self.secret_key = assumed_role.credentials.secret_key
-        self.token = assumed_role.credentials.session_token
+        self.access_key = assumed_role['Credentials']['AccessKeyId']
+        self.secret_key = assumed_role['Credentials']['SecretAccessKey']
+        self.token = assumed_role['Credentials']['SessionToken']
 
     def get_instance_region(self):
         """Read region from AWS metadata store."""
-        request = urllib2.Request(
-            urlparse.urljoin(
-                "http://169.254.169.254",
-                "/latest/meta-data/placement/availability-zone"
-            ))
-
-        response = None
-        try:
-            response = urllib2.urlopen(request)
-            data = response.read()
-        finally:
-            if response:
-                response.close()
-        return data[:-1]
+        return self.session.region_name
 
     def _request(self, path, timeval=None):
         url = urlparse.urljoin(self.baseurl, urllib2.quote(path))
