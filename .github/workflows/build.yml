@@ -11,8 +11,7 @@ jobs:
     name: CentOS6 RPMBuild
     steps:
     - uses: actions/checkout@v2
-    - name: rpmbuild on CentOS6
-      uses: seporaitis/rpmbuild-centos6-github-action@master
+    - uses: seporaitis/rpmbuild-centos6-github-action@master
       with:
         # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
         # root.
@@ -23,8 +22,7 @@ jobs:
     name: CentOS7 RPMBuild
     steps:
     - uses: actions/checkout@v2
-    - name: rpmbuild on CentOS7
-      uses: seporaitis/rpmbuild-centos7-github-action@master
+    - uses: seporaitis/rpmbuild-centos7-github-action@master
       with:
         # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
         # root.
