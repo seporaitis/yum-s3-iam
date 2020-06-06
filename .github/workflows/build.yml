@@ -14,4 +14,6 @@ jobs:
     - name: rpmbuild on CentOS6
       uses: seporaitis/rpmbuild-centos6-github-action@master
       with:
-        command: (pwd; cd /github/workspace; echo "$(pwd)"; ls -l; chown root:root *.spec; make test)
+        # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
+        # root.
+        command: (chown root:root *.spec; make rpm)
