@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check the package builds on CentOS6
     steps:
+    - uses: actions/checkout@v2
     - name: rpmbuild on CentOS6
       uses: seporaitis/rpmbuild-centos6-github-action@master
       with:
