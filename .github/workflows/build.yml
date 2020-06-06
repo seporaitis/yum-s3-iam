@@ -14,4 +14,4 @@ jobs:
     - name: rpmbuild on CentOS6
       uses: seporaitis/rpmbuild-centos6-github-action@master
       with:
-        command: (cd /github/workspace; echo "$(pwd)"; ls -l; make test)
+        command: (pwd; cd /github/workspace; echo "$(pwd)"; ls -l; chown root:root *.spec; make test)
