@@ -8,11 +8,23 @@ on:
 jobs:
   test_rpmbuild_centos6:
     runs-on: ubuntu-latest
-    name: Check the package builds on CentOS6
+    name: Package Builds On CentOS6
     steps:
     - uses: actions/checkout@v2
     - name: rpmbuild on CentOS6
       uses: seporaitis/rpmbuild-centos6-github-action@master
+      with:
+        # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
+        # root.
+        command: (chown root:root *.spec; make rpm)
+
+  test_rpmbuild_centos7:
+    runs-on: ubuntu-latest
+    name: Package Builds On CentOS7
+    steps:
+    - uses: actions/checkout@v2
+    - name: rpmbuild on CentOS7
+      uses: seporaitis/rpmbuild-centos7-github-action@master
       with:
         # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
         # root.
