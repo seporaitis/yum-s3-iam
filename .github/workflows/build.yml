@@ -1,0 +1,16 @@
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - '*'
+jobs:
+  test_rpmbuild_centos6:
+    runs-on: ubuntu-latest
+    name: Check the package builds on CentOS6
+    steps:
+    - name: rpmbuild on CentOS6
+      uses: seporaitis/rpmbuild-centos6-github-action@master
+      with:
+        command: make rpm
