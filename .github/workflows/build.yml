@@ -1,0 +1,29 @@
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - '*'
+jobs:
+  test_rpmbuild_centos6:
+    runs-on: ubuntu-latest
+    name: CentOS6 RPMBuild
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seporaitis/rpmbuild-centos6-github-action@master
+      with:
+        # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
+        # root.
+        command: (chown root:root *.spec; make rpm)
+
+  test_rpmbuild_centos7:
+    runs-on: ubuntu-latest
+    name: CentOS7 RPMBuild
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seporaitis/rpmbuild-centos7-github-action@master
+      with:
+        # NOTE(seporaitis): rpmbuild doesn't like when spec is not owned by
+        # root.
+        command: (chown root:root *.spec; make rpm)
