@@ -26,7 +26,7 @@ S3 buckets backing a yum repository.
 
 There is a great blog post by Jeremy Carroll which explains in depth how to
 use this plugin:
-[S3 Yum Repos With IAM Authorization](http://www.carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/).
+[S3 Yum Repos With IAM Authorization](https://web.archive.org/web/20160708032958/https://carrollops.com/blog/2012/09/11/s3-yum-repos-with-iam-authorization/) (via Wayback Machine).
 
 ## Notes on S3 buckets and URLs
 
