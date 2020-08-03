@@ -351,9 +351,9 @@ class S3Grabber(object):
                     out.write(buff)
                     buff = response.read(BUFFER_SIZE)
             except urllib2.HTTPError, e:
-                if retries > 0:
+                if retries > 0 and (e.code > 499 or e.code < 400):
                     time.sleep(delay)
-                    delay *= self.backoff
+                    delay *= 2
                 else:
                     # Wrap exception as URLGrabError so that YumRepository catches it
                     from urlgrabber.grabber import URLGrabError
