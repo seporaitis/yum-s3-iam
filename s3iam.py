@@ -56,6 +56,7 @@ def config_hook(conduit):
     yum.config.RepoConf.region = yum.config.Option()
     yum.config.RepoConf.key_id = yum.config.Option()
     yum.config.RepoConf.secret_key = yum.config.Option()
+    yum.config.RepoConf.token = yum.config.Option()
     yum.config.RepoConf.delegated_role = yum.config.Option()
     yum.config.RepoConf.baseurl = yum.config.UrlListOption(
         schemes=('http', 'https', 's3', 'ftp', 'file')
@@ -146,6 +147,7 @@ class S3Repository(YumRepository):
         self.gpgkey = repo.gpgkey
         self.access_id = repo.key_id
         self.secret_key = repo.secret_key
+        self.token = repo.token
         self.enablegroups = repo.enablegroups
         self.delegated_role = repo.delegated_role
 
@@ -187,7 +189,7 @@ class S3Repository(YumRepository):
         if not self.grabber:
             self.grabber = S3Grabber(self)
             if self.access_id and self.secret_key:
-                self.grabber.set_credentials(self.access_id, self.secret_key)
+                self.grabber.set_credentials(self.access_id, self.secret_key, self.token)
             elif self.delegated_role:
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
@@ -285,10 +287,10 @@ class S3Grabber(object):
             from urlgrabber.grabber import URLGrabError
             raise URLGrabError(7, msg)
 
-    def set_credentials(self, access_key, secret_key):
+    def set_credentials(self, access_key, secret_key, token=None):
         self.access_key = access_key
         self.secret_key = secret_key
-        self.token = None
+        self.token = token
 
     def get_delegated_role_credentials(self, delegated_role):
         """Collect temporary credentials from AWS STS service. Uses
