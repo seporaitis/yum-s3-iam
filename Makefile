@@ -1,38 +1,68 @@
+# Set these for specific .spec files
 NAME    = yum-plugin-s3-iam
 VERSION = 1.2.2
-RELEASE = 1
-ARCH    = noarch
+RELEASE = 2
 
-RPM_TOPDIR ?= $(shell rpm --eval '%{_topdir}')
+# Build for designated operating systems
+#MOCKS += epel-5-i386
+MOCKS += epel-6-i386
+MOCKS += epel-6-x86_64
+MOCKS += epel-7-x86_64
+MOCKS += fedora-28-x86_64
 
-RPMBUILD_ARGS := \
-	--define "name $(NAME)" \
-	--define "version $(VERSION)" \
-	--define "release $(RELEASE)"
-
-.PHONY: all rpm install test
-
-all:
+.PHONY: help
+help:
 	@echo "Usage: make rpm"
 
+tarball: $(NAME)-$(VERSION).tar.gz
+$(NAME)-$(VERSION).tar.gz: 
+	rsync -a $(PWD)/ $(NAME)-$(VERSION)/ \
+		--exclude-from=.gitignore
+	tar cpzvf $@ $(NAME)-$(VERSION)
+
+spec: $(NAME).spec
+.PHONY: $(NAME).spec
+$(NAME).spec:: Makefile $(NAME).spec.in
+	rm -f $@
+	cat $(NAME).spec.in | \
+		sed "s/@@@NAME@@@/$(NAME)/g" | \
+		sed "s/@@@VERSION@@@/$(VERSION)/g" | \
+		sed "s/@@@RELEASE@@@/$(RELEASE)/g" > $@ || \
+		rm -f $@
+
+build:: rpm
+rpm:: srpm
+	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
+		--define '_sourcedir $(PWD)' \
+		-bb $(NAME).spec
+
+.PHONY: srpm
+srpm:: tarball
+srpm:: $(NAME).spec
+	@echo "Building SRPM with $?"
+	rpmbuild --define '_topdir $(PWD)/rpmbuild' \
+		--define '_sourcedir $(PWD)' \
+		-bs $(NAME).spec --nodeps
+
+.PHONY: install
 install:
 	install -m 0755 -d $(DESTDIR)/etc/yum/pluginconf.d/
 	install -m 0644 s3iam.conf $(DESTDIR)/etc/yum/pluginconf.d/
 	install -m 0755 -d $(DESTDIR)/usr/lib/yum-plugins/
 	install -m 0644 s3iam.py $(DESTDIR)/usr/lib/yum-plugins/
 
-rpm:
-	mkdir -p $(RPM_TOPDIR)/SOURCES
-	mkdir -p $(RPM_TOPDIR)/SPECS
-	mkdir -p $(RPM_TOPDIR)/BUILD
-	mkdir -p $(RPM_TOPDIR)/RPMS/$(ARCH)
-	mkdir -p $(RPM_TOPDIR)/SRPMS
-	rm -Rf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
-	cp -r . $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
-	tar czf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION).tar.gz -C $(RPM_TOPDIR)/SOURCES --exclude ".git" $(NAME)-$(VERSION)
-	rm -Rf $(RPM_TOPDIR)/SOURCES/$(NAME)-$(VERSION)
-	cp $(NAME).spec $(RPM_TOPDIR)/SPECS/
-	rpmbuild $(RPMBUILD_ARGS) -ba --clean $(NAME).spec
+mocks: $(MOCKS)
+.PHONY: $(MOCKS)
+$(MOCKS):: /usr/bin/mock
+$(MOCKS):: srpm
+	mock -r $@ --resultdir=$(PWD)/$@ \
+		rpmbuild/SRPMS/$(NAME)-$(VERSION)-$(RELEASE).*.src.rpm
 
+clean::
+	rm -rf */
+	rm -rf *.tar.gz
+	rm -rf *.spec
+
+.PHONY: test
 test: rpm
 	python tests.py
