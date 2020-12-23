@@ -37,6 +37,9 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/lib/yum-plugins/s3iam.py*
 
 %changelog
+* Thu Aug 16 2018 Tim Bannister <tim+opensource@scalefactory.com> 1.2.2-1
+- Fix older incorrect date in spec changelog
+
 * Fri May 05 2017 Mathias Brossard <mathias@brossard.org> 1.2.2-1
 - Handle special value '__none__' for proxy (@andlam)
 
@@ -55,7 +58,7 @@ rm -rf ${RPM_BUILD_ROOT}
 * Thu Feb 16 2017 Mathias Brossard <mathias@brossard.org> 1.1.1-1
 - Add support for cn-north-1 region (@mbrossard)
 
-* Wed Jul 11 2016 Mathias Brossard <mathias@brossard.org> 1.1.0-1
+* Mon Jul 11 2016 Mathias Brossard <mathias@brossard.org> 1.1.0-1
 - Add support for AWS v4 signature (@mbrossard)
 - Add support for s3:// scheme (@asedge, @mbrossard)
 - Add retries with exponential back-off (@bemehow, @mbrossard)
