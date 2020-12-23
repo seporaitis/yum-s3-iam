@@ -74,9 +74,15 @@ def parse_url(url):
         return (m.group(2), None, m.group(3))
 
     # http[s]://<bucket>.s3-<aws-region>.amazonaws.com
-    m = re.match(r'(http|https|s3)://([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])[.]s3-([a-z0-9-]+)[.]amazonaws[.]com(.*)$', url)
+    # http[s]://<bucket>.s3.<aws-region>.amazonaws.com
+    m = re.match(r'(http|https|s3)://([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])[.]s3[-.]([a-z0-9-]+)[.]amazonaws[.]com(.*)$', url)
     if m:
         return (m.group(2), m.group(3), m.group(4))
+
+    # http://<bucket>.s3-website.<aws-region>.amazonaws.com
+    m = re.match(r'http://([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])\.s3-website\.([a-z0-9-]+)[.]amazonaws[.]com(.*)$', url)
+    if m:
+        return (m.group(1), m.group(2), m.group(3))
 
     # http[s]://s3.amazonaws.com/<bucket>
     m = re.match(r'(http|https|s3)://s3[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
@@ -90,6 +96,11 @@ def parse_url(url):
 
     # http[s]://s3-<region>.amazonaws.com/<bucket>
     m = re.match(r'(http|https|s3)://s3-([a-z0-9-]+)[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
+    if m:
+        return (m.group(3), m.group(2), m.group(4))
+
+    # https://s3.dualstack.<region>.amazonaws.com/<bucket>
+    m = re.match(r'(http|https)://s3\.dualstack\.([a-z0-9-]+)\.s3-website\.com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
     if m:
         return (m.group(3), m.group(2), m.group(4))
 
