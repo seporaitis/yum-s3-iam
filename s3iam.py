@@ -88,6 +88,11 @@ def parse_url(url):
     if m:
         return (m.group(2), 'cn-north-1', m.group(3))
 
+    # http[s]://s3.cn-northwest-1.amazonaws.com.cn/<bucket>
+    m = re.match(r'(http|https|s3)://s3[.]cn-northwest-1[.]amazonaws[.]com[.]cn/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
+    if m:
+        return (m.group(2), 'cn-northwest-1', m.group(3))
+
     # http[s]://s3-<region>.amazonaws.com/<bucket>
     m = re.match(r'(http|https|s3)://s3-([a-z0-9-]+)[.]amazonaws[.]com/([a-z0-9][a-z0-9-.]{1,61}[a-z0-9])(.*)$', url)
     if m:
@@ -136,6 +141,8 @@ class S3Repository(YumRepository):
             self.baseurl = "https://s3-%s.amazonaws.com/%s%s" % (region, bucket, path)
             if 'cn-north-1' in region:
                 self.baseurl = "https://s3.cn-north-1.amazonaws.com.cn/%s%s" % (bucket, path)
+            elif 'cn-northwest-1' in region:
+                self.baseurl = "https://s3.cn-northwest-1.amazonaws.com.cn/%s%s" % (bucket, path)
         else:
             self.baseurl = "https://%s.s3.amazonaws.com%s" % (bucket, path)
 
