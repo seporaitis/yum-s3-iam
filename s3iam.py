@@ -195,6 +195,7 @@ class S3Repository(YumRepository):
             if self.access_id and self.secret_key:
                 self.grabber.set_credentials(self.access_id, self.secret_key)
             elif self.delegated_role:
+                self.grabber.get_imdsv2_credentials()
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
                 self.grabber.get_imdsv2_credentials()
