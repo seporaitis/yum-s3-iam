@@ -119,6 +119,12 @@ def prereposetup_hook(conduit):
         if isinstance(repo, YumRepository) and repo.s3_enabled:
             replace_repo(repos, repo)
 
+class PutRequest(urllib2.Request):
+    """class to handling putting with urllib2"""
+
+    def get_method(self, *args, **kwargs):
+        return 'PUT'
+
 
 class S3Repository(YumRepository):
     """Repository object for Amazon S3, using IAM Roles."""
@@ -189,8 +195,10 @@ class S3Repository(YumRepository):
             if self.access_id and self.secret_key:
                 self.grabber.set_credentials(self.access_id, self.secret_key)
             elif self.delegated_role:
+                self.grabber.get_imdsv2_credentials()
                 self.grabber.get_delegated_role_credentials(self.delegated_role)
             else:
+                self.grabber.get_imdsv2_credentials()
                 self.grabber.get_role()
                 self.grabber.get_credentials()
         return self.grabber
@@ -226,6 +234,24 @@ class S3Grabber(object):
         self.secret_key = None
         self.token = None
 
+    def get_imdsv2_credentials(self):
+        """Need token for querying metadata"""
+        request = PutRequest(
+            urlparse.urljoin(
+                "http://169.254.169.254",
+                "/latest/api/token"
+            ))
+        request.add_header('X-aws-ec2-metadata-token-ttl-seconds', 300)
+
+        try:
+            response = urllib2.urlopen(request)
+            self.imdsv2_token = (response.read())
+        except Exception:
+            response = None
+        finally:
+            if response:
+                response.close()
+
     def get_role(self):
         """Read IAM role from AWS metadata store."""
         request = urllib2.Request(
@@ -233,6 +259,7 @@ class S3Grabber(object):
                 "http://169.254.169.254",
                 "/latest/meta-data/iam/security-credentials/"
             ))
+        request.add_header('X-aws-ec2-metadata-token', self.imdsv2_token)
 
         try:
             response = urllib2.urlopen(request)
@@ -255,6 +282,8 @@ class S3Grabber(object):
                     "http://169.254.169.254/",
                     "latest/meta-data/iam/security-credentials/",
                 ), self.iamrole))
+
+        request.add_header('X-aws-ec2-metadata-token', self.imdsv2_token)
 
         try:
             response = urllib2.urlopen(request)
@@ -313,6 +342,7 @@ class S3Grabber(object):
                 "/latest/meta-data/placement/availability-zone"
             ))
 
+        request.add_header('X-aws-ec2-metadata-token', self.imdsv2_token)
         response = None
         try:
             response = urllib2.urlopen(request)
