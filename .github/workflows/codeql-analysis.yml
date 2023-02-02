@@ -1,0 +1,22 @@
+name: "CodeQL"
+
+on:
+  # workflow_dispatch enables manual triggering of the workflow
+  workflow_dispatch:
+  schedule:
+  - cron: '59 21 * * 5'
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: S24 static application security testing (SAST) action
+      uses: scout24/s24-sast-action@v1
+      with:
+        languages: python
+
